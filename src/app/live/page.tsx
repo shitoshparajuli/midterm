@@ -8,7 +8,7 @@ import { liveBoard } from "@/lib/queries";
 export default function LivePage() {
   return (
     <>
-      <Header active="live" />
+      <Header active="live" search={false} />
       <Suspense fallback={<div className="empty" style={{ padding: "20px 16px" }}>Loading…</div>}>
         <LiveData />
       </Suspense>

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { MarketLines, useHistory } from "./market-chart";
 import { Sparkline } from "./line-chart";
-import { Chips, SearchBox, searchText } from "./search";
+import { Chips, SearchBox } from "./search";
+import { raceMatches, tokenize } from "@/lib/search";
 import { fmtPct, fmtTime, officeLabel, raceName, toPct } from "@/lib/format";
 import { isNight, NIGHT_START, pollCloseAt } from "@/lib/election";
 
@@ -91,12 +92,12 @@ export function LiveBoard({ initial }: { initial: LiveData }) {
       data.rows.map((r) => {
         const p = r.p0 ?? r.p;
         const k = r.k0 ?? r.k;
-        return { r, text: searchText(r), split: p != null && k != null && p > 0.5 !== k > 0.5 };
+        return { r, split: p != null && k != null && p > 0.5 !== k > 0.5 };
       }),
     [data.rows],
   );
-  const ql = q.trim().toLowerCase();
-  const matched = indexed.filter((x) => !ql || x.text.includes(ql));
+  const tokens = tokenize(q);
+  const matched = indexed.filter((x) => raceMatches(x.r, tokens));
   const tests: Record<Filter, (x: (typeof matched)[number]) => boolean> = {
     all: () => true,
     counting: (x) => !x.r.winner,

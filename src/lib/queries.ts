@@ -549,3 +549,26 @@ export async function liveBoard() {
     rows,
   };
 }
+
+/** Compact index for the header search: every race with all known candidate names and current odds. */
+export async function searchIndex() {
+  const [races, cands] = await Promise.all([
+    listRaces(),
+    db.select({ raceKey: schema.candidates.raceKey, name: schema.candidates.name }).from(schema.candidates),
+  ]);
+  const byRace = new Map<string, Set<string>>();
+  for (const c of cands) byRace.set(c.raceKey, (byRace.get(c.raceKey) ?? new Set()).add(c.name));
+  return races
+    .filter((r) => r.office !== "generic")
+    .map((r) => ({
+      key: r.key,
+      office: r.office,
+      state: r.state,
+      title: r.title,
+      // Main D/R names first, then everyone else the markets list.
+      names: [...new Set([...r.names, ...(byRace.get(r.key) ?? [])])],
+      p: r.markets.polymarket?.demWinProb ?? null,
+      k: r.markets.kalshi?.demWinProb ?? null,
+      volume: volumeOf(r),
+    }));
+}

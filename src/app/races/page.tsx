@@ -7,20 +7,21 @@ import { listRaces } from "@/lib/queries";
 
 const ORDER: Record<string, number> = { control: 0, senate: 1, governor: 2, house: 3 };
 
-export default function RacesPage() {
+export default function RacesPage({ searchParams }: PageProps<"/races">) {
   return (
     <>
-      <Header active="races" />
+      <Header active="races" search={false} />
       <Suspense fallback={<div className="empty" style={{ padding: "20px 16px" }}>Loading…</div>}>
-        <RacesData />
+        <RacesData searchParams={searchParams} />
       </Suspense>
       <Footer />
     </>
   );
 }
 
-async function RacesData() {
+async function RacesData({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await connection();
+  const q = (await searchParams).q;
   const vol = (r: Awaited<ReturnType<typeof listRaces>>[number]) =>
     (r.markets.polymarket?.volume ?? 0) + (r.markets.kalshi?.volume ?? 0);
   const races: ListRace[] = (await listRaces())
@@ -37,5 +38,5 @@ async function RacesData() {
       pollMargin: r.polls?.margin ?? null,
       winner: r.winnerParty,
     }));
-  return <RaceList races={races} />;
+  return <RaceList races={races} initialQuery={typeof q === "string" ? q : ""} />;
 }

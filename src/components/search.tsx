@@ -1,7 +1,5 @@
 "use client";
 
-import { STATES } from "@/lib/races";
-
 export function SearchBox({ value, onChange }: { value: string; onChange: (q: string) => void }) {
   return (
     <div className="search">
@@ -20,9 +18,6 @@ export function SearchBox({ value, onChange }: { value: string; onChange: (q: st
   );
 }
 
-/** Lower-cased haystack for a race: title, state name, office, candidates. */
-export const searchText = (r: { title: string; state: string | null; office: string; names: string[] }) =>
-  [r.title, r.state, r.state && STATES[r.state], r.office, ...r.names].filter(Boolean).join(" ").toLowerCase();
 
 export function Chips<T extends string>({
   options,

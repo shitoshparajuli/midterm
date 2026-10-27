@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Chips, SearchBox, searchText } from "./search";
+import { Chips, SearchBox } from "./search";
+import { raceMatches, tokenize } from "@/lib/search";
 import { compare, fmtMargin, fmtPct, officeLabel, raceName } from "@/lib/format";
 
 export interface ListRace {
@@ -20,14 +21,14 @@ export interface ListRace {
 type Filter = "all" | "senate" | "governor" | "house" | "split";
 const PAGE = 50;
 
-export function RaceList({ races }: { races: ListRace[] }) {
-  const [q, setQ] = useState("");
+export function RaceList({ races, initialQuery = "" }: { races: ListRace[]; initialQuery?: string }) {
+  const [q, setQ] = useState(initialQuery);
   const [filter, setFilter] = useState<Filter>("all");
   const [limit, setLimit] = useState(PAGE);
 
-  const indexed = useMemo(() => races.map((r) => ({ r, text: searchText(r), cmp: compare(r.p, r.k) })), [races]);
-  const ql = q.trim().toLowerCase();
-  const matched = indexed.filter((x) => !ql || x.text.includes(ql));
+  const indexed = useMemo(() => races.map((r) => ({ r, cmp: compare(r.p, r.k) })), [races]);
+  const tokens = tokenize(q);
+  const matched = indexed.filter((x) => raceMatches(x.r, tokens));
   const tests: Record<Filter, (x: (typeof matched)[number]) => boolean> = {
     all: () => true,
     senate: (x) => x.r.office === "senate" || x.r.key === "CONTROL-SENATE",

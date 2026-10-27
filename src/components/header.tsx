@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { isNight, NIGHT_START, nightStarted } from "@/lib/election";
 import { fmtTime } from "@/lib/format";
+import { GlobalSearch } from "./global-search";
 
 const TABS = [
   { id: "overview", label: "Overview", href: "/" },
@@ -19,7 +20,14 @@ function meta(now: number | null) {
   return `Nov 3 · ${days} day${days === 1 ? "" : "s"}`;
 }
 
-export function Header({ active }: { active: (typeof TABS)[number]["id"] }) {
+export function Header({
+  active,
+  search = true,
+}: {
+  active: (typeof TABS)[number]["id"];
+  /** Off on pages that have their own race search. */
+  search?: boolean;
+}) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     const tick = () => setNow(Date.now());
@@ -37,6 +45,7 @@ export function Header({ active }: { active: (typeof TABS)[number]["id"] }) {
         </Link>
         <div className="brand-meta">{meta(now)}</div>
       </div>
+      {search && <GlobalSearch />}
       <nav className="seg seg-tabs" aria-label="Sections">
         {TABS.map((t) => (
           <Link key={t.id} href={t.href} className="seg-item" aria-current={t.id === active ? "page" : undefined}>
