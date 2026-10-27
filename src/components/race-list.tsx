@@ -42,6 +42,9 @@ export function RaceList({ races, initialQuery = "" }: { races: ListRace[]; init
 
   return (
     <div style={{ padding: "18px 16px 28px", display: "flex", flexDirection: "column", gap: 10, maxWidth: 760 }}>
+      <Link href="/vs-polls" style={{ fontSize: 13, color: "var(--color-accent-300)", alignSelf: "flex-start" }}>
+        Where markets and polls disagree ›
+      </Link>
       <SearchBox
         value={q}
         onChange={(v) => {

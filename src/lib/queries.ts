@@ -572,3 +572,36 @@ export async function searchIndex() {
       volume: volumeOf(r),
     }));
 }
+
+/**
+ * Markets vs polls: for every race with both, the markets' P(D) next to the poll-implied P(D),
+ * from all polls and from nonpartisan polls only.
+ */
+export async function marketsVsPolls() {
+  const races = (await listRaces()).filter(
+    (r) => ["senate", "governor", "house"].includes(r.office) && r.pollCount && (r.markets.polymarket || r.markets.kalshi),
+  );
+  const keys = races.map((r) => r.key);
+  const [polls, leanOf] = await Promise.all([pollsFor(keys), leanMap()]);
+  const now = new Date();
+  return races
+    .map((r) => {
+      const g = groupAverages(polls.get(r.key) ?? [], now, r.office, leanOf);
+      const p = r.markets.polymarket?.demWinProb ?? null;
+      const k = r.markets.kalshi?.demWinProb ?? null;
+      const both = [p, k].filter((x): x is number => x != null);
+      const avg = (x: (typeof g)["all"]) => x && { margin: x.margin, p: x.demWinProb, polls: x.polls, pollsters: x.pollsters };
+      return {
+        key: r.key,
+        office: r.office,
+        state: r.state,
+        title: r.title,
+        names: r.names,
+        volume: volumeOf(r),
+        markets: { polymarket: p, kalshi: k, avg: both.reduce((a, b) => a + b, 0) / both.length },
+        polls: { all: avg(g.all), nonpartisan: avg(g.nonpartisan) },
+      };
+    })
+    .filter((r) => r.polls.all);
+}
+export type MarketsVsPolls = Awaited<ReturnType<typeof marketsVsPolls>>;

@@ -113,6 +113,7 @@ Built from the Claude Design handoff in `design/design_handoff_midterm_tracker/`
 | `/` | Overview: Senate/House control odds over time, "races to watch" tiles (split calls first) |
 | `/races` | Searchable list of every race, with filters for office and split calls |
 | `/races/[key]` | Race detail: market chart (1H/1D/1W/30D/All/Nov 3) and a separate poll panel (all / left / right averages, poll dots, latest poll per pollster) |
+| `/vs-polls` | Markets vs polls: races where market odds and poll-implied odds favor different candidates or are far apart (nonpartisan or all polls) |
 | `/scorecard` | Locked Nov 2 projections vs results: leaderboard, calibration, pollsters, state by state |
 | `/live` | Election night: seat counts, control chart with race-call markers, scorecard at poll close, race rows |
 
@@ -129,6 +130,7 @@ Polymarket is always purple and Kalshi amber. "Nov 3" unlocks at 7pm ET on elect
 | `GET /api/polls?race=SEN-TX&lean=R` | raw polls with `pollsterLean` |
 | `GET /api/pollsters` | lean, affiliation and house effect |
 | `GET /api/accuracy?checkpoint=1d&office=senate` | scoring (see above) |
+| `GET /api/vs-polls` | market P(D) vs poll-implied P(D) (all and nonpartisan) for every race with both |
 | `GET /api/scorecard[?lock=&format=csv]` | locked projections scored against results |
 | `GET /api/live` | everything the Live screen needs (refreshed every 60s on election night) |
 | `GET /api/status` | recent pipeline runs, for a "last updated" badge |

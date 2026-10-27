@@ -6,6 +6,8 @@ import { Legend, MarketLines, RangePicker, useHistory, type History, type Range 
 import { Sparkline } from "./line-chart";
 import { compare, officeLabel, raceName } from "@/lib/format";
 import { BigOdds, Odds } from "./odds";
+import { VsPollsRow } from "./vs-polls-row";
+import type { Compared } from "@/lib/vs-polls";
 
 type Odds = { p: number | null; k: number | null };
 export interface Tile {
@@ -26,10 +28,13 @@ const CHAMBERS = [
 export function Overview({
   control,
   watch,
+  disagree,
   initial,
 }: {
   control: Record<"senate" | "house", Odds>;
   watch: Tile[];
+  /** Biggest markets-vs-polls disagreements (nonpartisan polls). */
+  disagree: Compared[];
   initial: Record<"senate" | "house", History>;
 }) {
   const [chamber, setChamber] = useState<"senate" | "house">("senate");
@@ -103,6 +108,25 @@ export function Overview({
           })}
         </div>
       </section>
+
+      {disagree.length > 0 && (
+        <section style={{ flex: "1 1 100%", minWidth: 0, display: "flex", flexDirection: "column", gap: 6, maxWidth: 820 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 500 }}>Markets vs polls</h2>
+            <Link href="/vs-polls" style={{ fontSize: 13, color: "var(--color-accent-300)", whiteSpace: "nowrap" }}>
+              See all ›
+            </Link>
+          </div>
+          <div style={{ fontSize: 13, color: "var(--color-neutral-400)" }}>
+            Races where the markets and nonpartisan polls favor different candidates, strongest first (gaps backed by more polls rank higher).
+          </div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {disagree.map((r) => (
+              <VsPollsRow key={r.key} r={r} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
