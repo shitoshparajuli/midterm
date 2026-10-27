@@ -53,6 +53,8 @@ export const RANGES = {
   "1w": { seconds: 7 * 86400, step: 3600 },
   "30d": { seconds: 30 * 86400, step: 4 * 3600 },
   all: { seconds: 365 * 86400, step: 86400 },
+  // Election night: 7pm ET Nov 3 onward (start is fixed, see raceHistory).
+  night: { seconds: 0, step: 120 },
 } as const;
 export type RangeKey = keyof typeof RANGES;
 export const isRange = (r: string | null): r is RangeKey => !!r && r in RANGES;

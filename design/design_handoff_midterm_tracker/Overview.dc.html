@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="_ds/nocturne-47613562-bb60-44af-a74d-6df658028d9c/styles.css"><script src="_ds/nocturne-47613562-bb60-44af-a74d-6df658028d9c/_ds_bundle.js"></script></helmet>
+<div style="background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-variant-numeric:tabular-nums;min-height:100%">
+<div style="max-width:1240px;margin:0 auto">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:18px 16px 0">
+<div style="flex:1 1 200px;display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<div style="font-size:19px;font-weight:500;letter-spacing:-0.015em">The Spread</div>
+<div style="font-size:12px;color:var(--color-neutral-500)">Nov 3 · 8 days</div>
+</div>
+<div style="flex:1 1 340px;max-width:520px;display:flex;border:1px solid var(--color-divider);border-radius:var(--radius-md);overflow:hidden">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+<div style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;color:{{ t.color }};box-shadow:{{ t.ring }}" style-hover="background:color-mix(in srgb, var(--color-text) 7%, transparent)">{{ t.label }}</div>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:28px;padding:20px 16px 28px;align-items:flex-start">
+<div style="flex:3 1 520px;min-width:0;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:18px">
+<sc-for list="{{ chamberPicks }}" as="c" hint-placeholder-count="2">
+<div onClick="{{ c.pick }}" style="font-size:20px;font-weight:500;letter-spacing:-0.015em;cursor:pointer;padding-bottom:4px;color:{{ c.color }};border-bottom:2px solid {{ c.line }}">{{ c.label }}</div>
+</sc-for>
+</div>
+<div style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="font-size:11px;color:var(--color-neutral-500)">Polymarket</div>
+<div style="font-size:30px;line-height:1;font-weight:500;color:var(--color-accent-400)">{{ cr.p }}<span style="font-size:15px">%</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="font-size:11px;color:var(--color-neutral-500)">Kalshi</div>
+<div style="font-size:30px;line-height:1;font-weight:500;color:oklch(0.8 0.12 78)">{{ cr.k }}<span style="font-size:15px">%</span></div>
+</div>
+<div style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--color-neutral-800);color:var(--color-neutral-100);margin-bottom:4px">{{ cr.gapLabel }}</div>
+</div>
+<div style="font-size:13px;color:var(--color-neutral-400)">Chance Democrats win control</div>
+<div style="position:relative;height:190px;padding:10px 48px 10px 30px;margin-top:4px">
+<sc-for list="{{ chart.grid }}" as="g" hint-placeholder-count="3">
+<div style="position:absolute;left:0;right:48px;top:{{ g.top }};display:flex;align-items:center;gap:6px">
+<div style="font-size:10px;color:var(--color-neutral-600);width:24px">{{ g.label }}</div>
+<div style="flex:1;height:1px;background:{{ g.color }}"></div>
+</div>
+</sc-for>
+<svg width="100%" height="170" viewBox="0 0 300 170" preserveAspectRatio="none" style="display:block;position:relative">
+<path d="{{ chart.k }}" fill="none" style="stroke:oklch(0.8 0.12 78)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+<path d="{{ chart.p }}" fill="none" style="stroke:var(--color-accent)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+</svg>
+<div style="position:absolute;right:0;width:42px;top:{{ chart.pTop }};font-size:13px;font-weight:500;color:var(--color-accent-400)">{{ chart.pv }}</div>
+<div style="position:absolute;right:0;width:42px;top:{{ chart.kTop }};font-size:13px;font-weight:500;color:oklch(0.8 0.12 78)">{{ chart.kv }}</div>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-600);padding-left:30px;padding-right:48px"><div>{{ chart.from }}</div><div>Now</div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:6px">
+<div style="display:flex;border:1px solid var(--color-divider);border-radius:var(--radius-md);overflow:hidden">
+<sc-for list="{{ ranges }}" as="r" hint-placeholder-count="3">
+<div onClick="{{ r.pick }}" style="padding:0 12px;height:34px;display:flex;align-items:center;font-size:12px;cursor:pointer;color:{{ r.color }};box-shadow:{{ r.ring }};opacity:{{ r.op }}">{{ r.label }}</div>
+</sc-for>
+</div>
+<div style="display:flex;gap:12px;font-size:11px;color:var(--color-neutral-400)">
+<div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:var(--color-accent)"></div>Polymarket</div>
+<div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:oklch(0.8 0.12 78)"></div>Kalshi</div>
+</div>
+</div>
+</div>
+<div style="flex:2 1 320px;min-width:0;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<div style="font-size:16px;font-weight:500">Races to watch</div>
+<div style="font-size:12px;color:var(--color-neutral-500)">Dem / Yes chance</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
+<sc-for list="{{ races }}" as="r" hint-placeholder-count="6">
+<div style="background:var(--color-surface);border-radius:var(--radius-md);padding:11px;display:flex;flex-direction:column;gap:6px;cursor:pointer;box-shadow:{{ r.tileRing }}" style-hover="background:var(--color-neutral-900)">
+<div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+<div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div>
+<div style="font-size:11px;color:var(--color-neutral-500)">{{ r.type }}</div>
+</div>
+<svg width="100%" height="34" viewBox="0 0 150 34" preserveAspectRatio="none" style="display:block">
+<path d="{{ r.mini.k }}" fill="none" style="stroke:oklch(0.8 0.12 78)" stroke-width="1.5" vector-effect="non-scaling-stroke"></path>
+<path d="{{ r.mini.p }}" fill="none" style="stroke:var(--color-accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"></path>
+</svg>
+<div style="display:flex;align-items:baseline;gap:8px">
+<div style="font-size:17px;font-weight:500;color:var(--color-accent-400)">{{ r.p }}</div>
+<div style="font-size:17px;font-weight:500;color:oklch(0.8 0.12 78)">{{ r.k }}</div>
+<div style="margin-left:auto;font-size:11px;color:{{ r.gapText }}">{{ r.gapShort }}</div>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const RACES = [
+  { id: 'sen', name: 'Senate control', type: 'Chamber', a: 'Dem', b: 'Rep', p: 44, k: 49, seed: 3 },
+  { id: 'house', name: 'House control', type: 'Chamber', a: 'Dem', b: 'Rep', p: 68, k: 63, seed: 7 },
+  { id: 'lk', name: 'Lakeshore', type: 'Senate', p: 61, k: 49, seed: 11 },
+  { id: 'ph', name: 'Pine Hollow 03', type: 'House', p: 47, k: 55, seed: 19 },
+  { id: 'm12', name: 'Measure 12', type: 'Ballot', p: 33, k: 41, seed: 23 },
+  { id: 'nl', name: 'Northland', type: 'Senate', p: 52, k: 58, seed: 29 },
+  { id: 'rm', name: 'Redmesa', type: 'Governor', p: 71, k: 69, seed: 31 },
+  { id: 'af', name: 'Ashford', type: 'Senate', p: 38, k: 36, seed: 37 },
+];
+function rng(seed) { let s = seed * 7919; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+function series(seed, end, n, vol) {
+  const r = rng(seed); let v = end + (r() - 0.5) * 18; const w = [];
+  for (let i = 0; i < n; i++) { v += (r() - 0.5) * vol; w.push(v); }
+  const fix = end - w[n - 1];
+  return w.map((x, i) => Math.max(3, Math.min(97, x + fix * i / (n - 1))));
+}
+function path(arr, w, h, lo, hi) {
+  return arr.map((v, i) => (i ? 'L' : 'M') + (i / (arr.length - 1) * w).toFixed(1) + ' ' + (h - (v - lo) / (hi - lo) * h).toFixed(1)).join(' ');
+}
+function enrich(r) {
+  const gap = Math.abs(r.p - r.k); const split = (r.p > 50) !== (r.k > 50);
+  const P = series(r.seed, r.p, 40, 5), K = series(r.seed + 101, r.k, 40, 5);
+  const all = [...P, ...K]; const lo = Math.min(...all) - 3, hi = Math.max(...all) + 3;
+  return {
+    ...r, gap, split,
+    gapLabel: gap + ' pt gap' + (split ? ' · split call' : ''),
+    gapShort: split ? 'Split · ' + gap : gap + ' pt gap',
+    gapText: split ? 'var(--color-accent-300)' : 'var(--color-neutral-500)',
+    tileRing: split ? '0 0 0 1px var(--color-accent-700)' : 'none',
+    mini: { p: path(P, 150, 34, lo, hi), k: path(K, 150, 34, lo, hi) },
+  };
+}
+const ALL = RACES.map(enrich);
+
+class Component extends DCLogic {
+  state = { chamber: 'sen', range: '30d' };
+  renderVals() {
+    const { chamber, range } = this.state;
+    const tabs = ['Overview', 'Races', 'Live'].map((label, i) => ({
+      label, color: i === 0 ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+      ring: i === 0 ? 'inset 0 0 0 1px var(--color-accent)' : 'none',
+    }));
+    const cr = ALL.find(r => r.id === chamber);
+    const n = range === '30d' ? 40 : 90, salt = range === '30d' ? 0 : 500, vol = range === '30d' ? 4 : 6;
+    const P = series(cr.seed + salt, cr.p, n, vol), K = series(cr.seed + salt + 101, cr.k, n, vol);
+    const lo = 20, hi = 80, H = 170;
+    const y = v => H - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * H;
+    let pTop = y(cr.p) + 1, kTop = y(cr.k) + 1;
+    if (Math.abs(pTop - kTop) < 16) { const m = (pTop + kTop) / 2; if (cr.p > cr.k) { pTop = m - 8; kTop = m + 8; } else { pTop = m + 8; kTop = m - 8; } }
+    const chart = {
+      p: path(P, 300, H, lo, hi), k: path(K, 300, H, lo, hi),
+      pv: cr.p + '%', kv: cr.k + '%', pTop: pTop + 'px', kTop: kTop + 'px',
+      from: range === '30d' ? 'Sep 26' : 'Jun 1',
+      grid: [70, 50, 30].map(v => ({ label: v + '%', top: (y(v) + 4) + 'px', color: v === 50 ? 'var(--color-neutral-700)' : 'var(--color-neutral-900)' })),
+    };
+    const chamberPicks = [['sen', 'Senate'], ['house', 'House']].map(([id, label]) => ({
+      label, pick: () => this.setState({ chamber: id }),
+      color: id === chamber ? 'var(--color-text)' : 'var(--color-neutral-600)',
+      line: id === chamber ? 'var(--color-accent)' : 'transparent',
+    }));
+    const ranges = [['30d', '30D'], ['all', 'All'], ['night', 'Nov 3']].map(([id, label]) => ({
+      label, pick: id === 'night' ? () => {} : () => this.setState({ range: id }),
+      color: id === range ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+      ring: id === range ? 'inset 0 0 0 1px var(--color-accent)' : 'none',
+      op: id === 'night' ? 0.45 : 1,
+    }));
+    return { tabs, cr, chart, chamberPicks, ranges, races: ALL.filter(r => r.type !== 'Chamber') };
+  }
+}
+</script>
+</body>
+</html>

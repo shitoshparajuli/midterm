@@ -5,6 +5,7 @@ import { demProbSeries, RANGES, type Pt, type RangeKey } from "@/lib/series";
 import { fetchPmHistory } from "@/lib/sources/polymarket";
 import { fetchKalshiHistory } from "@/lib/sources/kalshi";
 import { marginToProb } from "@/lib/stats";
+import { NIGHT_END, NIGHT_START, pollCloseAt } from "@/lib/election";
 
 type Market = typeof schema.markets.$inferSelect;
 export const PLATFORMS = ["polymarket", "kalshi"] as const;
@@ -89,6 +90,9 @@ export async function listRaces(office?: string) {
               : null,
           ]),
         ),
+        names: [mk?.polymarket.D ?? mk?.kalshi.D, mk?.polymarket.R ?? mk?.kalshi.R]
+          .map((m) => m?.candidateName)
+          .filter((n): n is string => !!n),
         polls: avg && { ...avg, demWinProb: marginToProb(avg.margin, r.office) },
         pollCount: polls.get(r.key)?.length ?? 0,
       };
@@ -107,13 +111,20 @@ export async function raceDetail(key: string) {
     primaryMarkets([key]),
   ]);
   const mk = primary.get(key);
+  const nameOf = (party: "D" | "R") => mk?.polymarket[party]?.candidateName ?? mk?.kalshi[party]?.candidateName ?? null;
+  const end = Math.floor(Date.now() / 1000);
+  const datedPolls = pollRows.filter((p) => p.margin != null);
+  const firstPoll = datedPolls.length ? Date.parse(datedPolls[datedPolls.length - 1].endDate) / 1000 : end;
+  const pollStart = Math.max(end - 120 * 86400, Math.min(firstPoll, end - 30 * 86400));
   return {
     race,
+    names: { D: nameOf("D"), R: nameOf("R") },
+    pollLines: { start: pollStart, end, lines: dailyPollLines(datedPolls, race.office, leanOf, pollStart, end) },
     candidates: cands,
     markets,
     current: Object.fromEntries(
       PLATFORMS.map((p) => [p, mk ? demProb(mk[p].D?.lastPrice, mk[p].R?.lastPrice) : null]),
-    ),
+    ) as Record<Platform, number | null>,
     pollAverages: groupAverages(pollRows, new Date(), race.office, leanOf),
     polls: pollRows.map((p) => ({ ...p, pollsterLean: leanOf(p.pollster) })),
   };
@@ -136,9 +147,9 @@ async function storedHistory(ids: string[], start: number): Promise<Map<string, 
     select market_id, ts, price from price_points
     where market_id in ${ids} and ts >= ${startDate.toISOString()}
     union all
-    select distinct on (market_id) market_id, ts, price from price_points
+    (select distinct on (market_id) market_id, ts, price from price_points
     where market_id in ${ids} and ts < ${startDate.toISOString()}
-    order by market_id, ts desc`);
+    order by market_id, ts desc)`);
   for (const r of rows) {
     const pts = out.get(r.market_id) ?? [];
     pts.push({ t: Math.floor(new Date(r.ts).getTime() / 1000), p: r.price });
@@ -147,15 +158,45 @@ async function storedHistory(ids: string[], start: number): Promise<Map<string, 
   return out;
 }
 
+type PollPt = { t: number; margin: number; demWinProb: number | null };
+
+/** One poll-average point per day (and one at `end`) for each lean group. */
+function dailyPollLines(
+  rp: PollLite[],
+  office: string,
+  leanOf: (pollster: string) => string | null,
+  start: number,
+  end: number,
+) {
+  const acc = Object.fromEntries(LEAN_GROUPS.map((g) => [g, [] as PollPt[]])) as Record<LeanGroup, PollPt[]>;
+  const subset = Object.fromEntries(LEAN_GROUPS.map((g) => [g, rp.filter((p) => inGroup(p, g, leanOf))]));
+  for (let t = Math.floor(start / 86400) * 86400 + 86400; t <= end + 86400; t += 86400) {
+    const asOf = new Date(Math.min(t, end) * 1000);
+    for (const g of LEAN_GROUPS) {
+      const a = pollAverage(subset[g], asOf);
+      if (a) acc[g].push({ t: Math.min(t, end), margin: a.margin, demWinProb: marginToProb(a.margin, office) });
+    }
+  }
+  return acc;
+}
+
 export async function raceHistory(key: string, range: RangeKey) {
-  const { seconds, step } = RANGES[range];
-  const end = Math.floor(Date.now() / 1000);
-  const start = end - seconds;
+  const { seconds } = RANGES[range];
+  let { step } = RANGES[range];
+  let end = Math.floor(Date.now() / 1000);
+  let start = end - seconds;
+  if (range === "night") {
+    start = NIGHT_START / 1000;
+    end = Math.min(end, NIGHT_END / 1000);
+    if (end - start > 6 * 3600) step = 300;
+  }
   const mk = (await primaryMarkets([key])).get(key);
   const markets = mk ? PLATFORMS.flatMap((p) => [mk[p].D, mk[p].R].filter((m): m is Market => !!m)) : [];
 
   let pts: Map<string, Pt[]>;
-  if (range === "1h" || range === "1d") {
+  if (range === "night" && end <= start) {
+    pts = new Map();
+  } else if (range === "1h" || range === "1d" || range === "night") {
     pts = new Map(
       await Promise.all(
         markets.map(async (m) => [m.id, await liveHistory(m, start, end).catch(() => [])] as const),
@@ -187,7 +228,6 @@ export async function raceHistory(key: string, range: RangeKey) {
   ) as Record<Platform, Pt[]>;
 
   // Daily poll-average lines (per lean group) for the longer ranges.
-  type PollPt = { t: number; margin: number; demWinProb: number | null };
   let polls: Record<LeanGroup, PollPt[]> | null = null;
   if (range === "1w" || range === "30d" || range === "all") {
     const [[race], pollMap, leanOf] = await Promise.all([
@@ -196,18 +236,7 @@ export async function raceHistory(key: string, range: RangeKey) {
       leanMap(),
     ]);
     const rp = pollMap.get(key) ?? [];
-    if (rp.length && race) {
-      const acc = Object.fromEntries(LEAN_GROUPS.map((g) => [g, [] as PollPt[]])) as Record<LeanGroup, PollPt[]>;
-      const subset = Object.fromEntries(LEAN_GROUPS.map((g) => [g, rp.filter((p) => inGroup(p, g, leanOf))]));
-      for (let t = Math.floor(start / 86400) * 86400 + 86400; t <= end + 86400; t += 86400) {
-        const asOf = new Date(Math.min(t, end) * 1000);
-        for (const g of LEAN_GROUPS) {
-          const a = pollAverage(subset[g], asOf);
-          if (a) acc[g].push({ t: Math.min(t, end), margin: a.margin, demWinProb: marginToProb(a.margin, race.office) });
-        }
-      }
-      polls = acc;
-    }
+    if (rp.length && race) polls = dailyPollLines(rp, race.office, leanOf, start, end);
   }
 
   return { key, range, step, start, end, series, polls, calledAt: null as string | null };
@@ -342,4 +371,181 @@ export async function listPolls(raceKey?: string, lean?: string, limit = 200) {
     .limit(lean ? 5000 : limit);
   const out = rows.map((p) => ({ ...p, pollsterLean: leanOf(p.pollster) }));
   return lean ? out.filter((p) => p.pollsterLean === lean || p.partisan === lean).slice(0, limit) : out;
+}
+
+// ---------------------------------------------------------------- screens
+
+/** Stored P(D) lines for many races at once (for tiles and row sparklines). Values only, 0..1. */
+export async function sparklines(raceKeys: string[], start: number, step: number) {
+  const pm = await primaryMarkets(raceKeys);
+  const end = Math.floor(Date.now() / 1000);
+  const ids = [...pm.values()].flatMap((x) => PLATFORMS.flatMap((p) => [x[p].D?.id, x[p].R?.id])).filter(Boolean) as string[];
+  const pts = await storedHistory(ids, start);
+  const out = new Map<string, Record<Platform, number[]>>();
+  for (const [key, mk] of pm) {
+    out.set(
+      key,
+      Object.fromEntries(
+        PLATFORMS.map((p) => [
+          p,
+          demProbSeries({ D: mk[p].D && pts.get(mk[p].D!.id), R: mk[p].R && pts.get(mk[p].R!.id) }, start, end, step).map((x) => x.p),
+        ]),
+      ) as Record<Platform, number[]>,
+    );
+  }
+  return out;
+}
+
+export type RaceRow = Awaited<ReturnType<typeof listRaces>>[number];
+const volumeOf = (r: RaceRow) => (r.markets.polymarket?.volume ?? 0) + (r.markets.kalshi?.volume ?? 0);
+
+/** Overview: chamber control now + "races to watch" (contested, split calls first, then by volume). */
+export async function overview() {
+  const races = await listRaces();
+  const control = Object.fromEntries(
+    ["SENATE", "HOUSE"].map((c) => {
+      const r = races.find((x) => x.key === `CONTROL-${c}`);
+      return [c.toLowerCase(), { p: r?.markets.polymarket?.demWinProb ?? null, k: r?.markets.kalshi?.demWinProb ?? null }];
+    }),
+  ) as Record<"senate" | "house", { p: number | null; k: number | null }>;
+
+  const contested = races
+    .filter((r) => ["senate", "governor", "house"].includes(r.office))
+    .map((r) => ({ r, p: r.markets.polymarket?.demWinProb, k: r.markets.kalshi?.demWinProb }))
+    .filter((x) => x.p != null && x.k != null && (x.p + x.k) / 2 >= 0.12 && (x.p + x.k) / 2 <= 0.88)
+    .map((x) => ({ ...x, split: x.p! > 0.5 !== x.k! > 0.5 }))
+    .sort((a, b) => Number(b.split) - Number(a.split) || volumeOf(b.r) - volumeOf(a.r))
+    .slice(0, 12);
+
+  const start = Math.floor(Date.now() / 1000) - 30 * 86400;
+  const spark = await sparklines(contested.map((x) => x.r.key), start, 12 * 3600);
+  return {
+    control,
+    watch: contested.map(({ r, p, k }) => ({
+      key: r.key,
+      office: r.office,
+      state: r.state,
+      title: r.title,
+      p: p!,
+      k: k!,
+      spark: spark.get(r.key) ?? { polymarket: [], kalshi: [] },
+    })),
+  };
+}
+
+/** Seats not up in 2026 (Dem caucus incl. King and Sanders). */
+const SENATE_HOLDOVER = { D: 34, R: 31 };
+
+/** Everything the Live screen needs: chambers, rows with poll-close vs. now odds, scorecard. */
+export async function liveBoard() {
+  const nowMs = Date.now();
+  const all = await listRaces();
+  const races = all.filter((r) => ["senate", "governor", "house"].includes(r.office));
+
+  // Odds at each state's poll close (grouped by close time to keep it to a few queries).
+  const pm = await primaryMarkets(races.map((r) => r.key));
+  const byClose = new Map<number, string[]>();
+  for (const r of races) {
+    const at = pollCloseAt(r.state);
+    if (at <= nowMs) byClose.set(at, [...(byClose.get(at) ?? []), r.key]);
+  }
+  const closeOdds = new Map<string, Record<Platform, number | null>>();
+  await Promise.all(
+    [...byClose].map(async ([at, keys]) => {
+      const ids = keys.flatMap((k) => PLATFORMS.flatMap((p) => [pm.get(k)?.[p].D?.id, pm.get(k)?.[p].R?.id])).filter(Boolean) as string[];
+      const prices = await priceAt(ids, new Date(at));
+      for (const k of keys) {
+        const mk = pm.get(k);
+        closeOdds.set(
+          k,
+          Object.fromEntries(
+            PLATFORMS.map((p) => [p, mk ? demProb(mk[p].D && prices.get(mk[p].D!.id), mk[p].R && prices.get(mk[p].R!.id)) : null]),
+          ) as Record<Platform, number | null>,
+        );
+      }
+    }),
+  );
+
+  // Sparklines: tonight once polls start closing, else the last 24 hours.
+  const sparkStart = Math.floor((nowMs >= NIGHT_START ? NIGHT_START : nowMs - 86400_000) / 1000);
+  const spark = await sparklines(races.map((r) => r.key), sparkStart, 1800);
+
+  const rows = races
+    .map((r) => ({
+      key: r.key,
+      office: r.office,
+      state: r.state,
+      title: r.title,
+      names: r.names,
+      volume: volumeOf(r),
+      p: r.markets.polymarket?.demWinProb ?? null,
+      k: r.markets.kalshi?.demWinProb ?? null,
+      p0: closeOdds.get(r.key)?.polymarket ?? null,
+      k0: closeOdds.get(r.key)?.kalshi ?? null,
+      winner: r.winnerParty,
+      demPct: r.demPct,
+      repPct: r.repPct,
+      calledAt: r.calledAt?.toISOString() ?? null,
+      spark: spark.get(r.key) ?? { polymarket: [], kalshi: [] },
+    }))
+    .sort((a, b) => Number(!!a.winner) - Number(!!b.winner) || b.volume - a.volume);
+
+  const chamber = (office: "senate" | "house") => {
+    const rs = rows.filter((r) => r.office === office);
+    const base = office === "senate" ? SENATE_HOLDOVER : { D: 0, R: 0 };
+    const d = base.D + rs.filter((r) => r.winner === "D").length;
+    const rep = base.R + rs.filter((r) => r.winner === "R").length;
+    return {
+      total: office === "senate" ? 100 : 435,
+      need: office === "senate" ? 51 : 218,
+      d,
+      r: rep,
+      uncalled: rs.filter((r) => !r.winner).length,
+    };
+  };
+
+  // Chamber control odds at first poll close, for "change since poll close".
+  const ctl = await primaryMarkets(["CONTROL-SENATE", "CONTROL-HOUSE"]);
+  const ctlIds = [...ctl.values()].flatMap((x) => PLATFORMS.flatMap((p) => [x[p].D?.id, x[p].R?.id])).filter(Boolean) as string[];
+  const ctlPrices = nowMs >= NIGHT_START ? await priceAt(ctlIds, new Date(NIGHT_START)) : new Map<string, number>();
+  const controlAt = (key: string) => {
+    const mk = ctl.get(key);
+    const nowR = all.find((r) => r.key === key);
+    return Object.fromEntries(
+      PLATFORMS.map((p) => [
+        p,
+        {
+          now: nowR?.markets[p]?.demWinProb ?? null,
+          close: mk && ctlPrices.size ? demProb(mk[p].D && ctlPrices.get(mk[p].D!.id), mk[p].R && ctlPrices.get(mk[p].R!.id)) : null,
+        },
+      ]),
+    ) as Record<Platform, { now: number | null; close: number | null }>;
+  };
+
+  // Scorecard: called races, odds at poll close. "Right" = winner above 50%.
+  const called = rows.filter((r) => r.winner === "D" || r.winner === "R");
+  const score = Object.fromEntries(
+    PLATFORMS.map((p) => {
+      const key = p === "polymarket" ? "p0" : "k0";
+      const scored = called.filter((r) => r[key] != null);
+      const y = (r: (typeof rows)[number]) => (r.winner === "D" ? 1 : 0);
+      return [
+        p,
+        {
+          n: scored.length,
+          right: scored.filter((r) => (r[key]! > 0.5 ? 1 : 0) === y(r)).length,
+          brier: scored.length ? scored.reduce((a, r) => a + brier(r[key]!, y(r)), 0) / scored.length : null,
+        },
+      ];
+    }),
+  ) as Record<Platform, { n: number; right: number; brier: number | null }>;
+
+  return {
+    now: nowMs,
+    chambers: { senate: chamber("senate"), house: chamber("house") },
+    control: { senate: controlAt("CONTROL-SENATE"), house: controlAt("CONTROL-HOUSE") },
+    called: called.length,
+    score,
+    rows,
+  };
 }

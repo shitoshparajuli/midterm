@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="_ds/nocturne-47613562-bb60-44af-a74d-6df658028d9c/styles.css"><script src="_ds/nocturne-47613562-bb60-44af-a74d-6df658028d9c/_ds_bundle.js"></script></helmet>
+<div style="background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-variant-numeric:tabular-nums;min-height:100%">
+<div style="max-width:1240px;margin:0 auto">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:18px 16px 0">
+<div style="flex:1 1 200px;display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<div style="font-size:19px;font-weight:500;letter-spacing:-0.015em">The Spread</div>
+<div style="font-size:12px;color:var(--color-neutral-500)">Nov 3 · 8 days</div>
+</div>
+<div style="flex:1 1 340px;max-width:520px;display:flex;border:1px solid var(--color-divider);border-radius:var(--radius-md);overflow:hidden">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+<div style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;color:{{ t.color }};box-shadow:{{ t.ring }}" style-hover="background:color-mix(in srgb, var(--color-text) 7%, transparent)">{{ t.label }}</div>
+</sc-for>
+</div>
+</div>
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:6px">
+<div style="font-size:13px;color:var(--color-accent-300);cursor:pointer">‹ All races</div>
+<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+<div style="font-size:28px;font-weight:500;letter-spacing:-0.015em;line-height:1.1">Lakeshore</div>
+<div style="font-size:13px;color:var(--color-neutral-400)">Senate · open seat</div>
+</div>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<div style="font-size:14px;color:var(--color-neutral-300)">Candidate A (D) vs Candidate B (R)</div>
+<div style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--color-accent-800);color:var(--color-accent-100)">Split call · 12 pt gap</div>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:16px;padding:18px 16px 28px;align-items:flex-start">
+
+<div style="flex:1 1 440px;min-width:0;background:var(--color-surface);border-radius:var(--radius-md);padding:14px;display:flex;flex-direction:column;gap:10px">
+<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-300)">Prediction markets</div>
+<div style="font-size:13px;color:var(--color-neutral-400);margin-top:-4px">Chance Candidate A (D) wins</div>
+<div style="display:flex;align-items:flex-end;gap:20px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="font-size:11px;color:var(--color-neutral-500)">Polymarket</div>
+<div style="font-size:30px;line-height:1;font-weight:500;color:var(--color-accent-400)">61<span style="font-size:15px">%</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="font-size:11px;color:var(--color-neutral-500)">Kalshi</div>
+<div style="font-size:30px;line-height:1;font-weight:500;color:oklch(0.8 0.12 78)">49<span style="font-size:15px">%</span></div>
+</div>
+</div>
+<div style="position:relative;height:170px;padding:10px 0 10px 30px">
+<sc-for list="{{ mkt.grid }}" as="g" hint-placeholder-count="3">
+<div style="position:absolute;left:0;right:0;top:{{ g.top }};display:flex;align-items:center;gap:6px">
+<div style="font-size:10px;color:var(--color-neutral-600);width:24px">{{ g.label }}</div>
+<div style="flex:1;height:1px;background:{{ g.color }}"></div>
+</div>
+</sc-for>
+<svg width="100%" height="150" viewBox="0 0 300 150" preserveAspectRatio="none" style="display:block;position:relative">
+<path d="{{ mkt.k }}" fill="none" style="stroke:oklch(0.8 0.12 78)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+<path d="{{ mkt.p }}" fill="none" style="stroke:var(--color-accent)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-600);padding-left:30px"><div>{{ mkt.from }}</div><div>Now</div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+<div style="display:flex;border:1px solid var(--color-divider);border-radius:var(--radius-md);overflow:hidden">
+<sc-for list="{{ ranges }}" as="r" hint-placeholder-count="3">
+<div onClick="{{ r.pick }}" style="padding:0 12px;height:34px;display:flex;align-items:center;font-size:12px;cursor:pointer;color:{{ r.color }};box-shadow:{{ r.ring }};opacity:{{ r.op }}">{{ r.label }}</div>
+</sc-for>
+</div>
+<div style="display:flex;gap:12px;font-size:11px;color:var(--color-neutral-400)">
+<div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:var(--color-accent)"></div>Polymarket</div>
+<div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:oklch(0.8 0.12 78)"></div>Kalshi</div>
+</div>
+</div>
+</div>
+
+<div style="flex:1 1 440px;min-width:0;background:var(--color-surface);border-radius:var(--radius-md);padding:14px;display:flex;flex-direction:column;gap:10px">
+<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-300)">Polls · Dem margin</div>
+<div style="font-size:13px;line-height:1.45;color:var(--color-neutral-400);margin-top:-4px;text-wrap:pretty">Vote-share lead in recent public polls. Markets show chance of winning, so the two use different scales.</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+<sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+<div onClick="{{ g.toggle }}" style="cursor:pointer;border-radius:var(--radius-md);padding:8px 10px;display:flex;flex-direction:column;gap:2px;box-shadow:{{ g.ring }};opacity:{{ g.op }}" style-hover="background:color-mix(in srgb, var(--color-text) 5%, transparent)">
+<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-neutral-400);white-space:nowrap"><div style="width:12px;border-top:2px {{ g.dash }} {{ g.color }}"></div>{{ g.label }}</div>
+<div style="font-size:20px;font-weight:500;color:{{ g.color }}">{{ g.value }}</div>
+</div>
+</sc-for>
+</div>
+<div style="position:relative;height:170px;padding:10px 0 10px 34px">
+<sc-for list="{{ polls.grid }}" as="g" hint-placeholder-count="3">
+<div style="position:absolute;left:0;right:0;top:{{ g.top }};display:flex;align-items:center;gap:6px">
+<div style="font-size:10px;color:var(--color-neutral-600);width:28px">{{ g.label }}</div>
+<div style="flex:1;height:1px;background:{{ g.color }}"></div>
+</div>
+</sc-for>
+<svg width="100%" height="150" viewBox="0 0 300 150" preserveAspectRatio="none" style="display:block;position:relative">
+<sc-for list="{{ polls.lines }}" as="l" hint-placeholder-count="5">
+<path d="{{ l.d }}" fill="none" style="stroke:{{ l.color }};opacity:{{ l.op }}" stroke-width="{{ l.w }}" stroke-dasharray="{{ l.dash }}" vector-effect="non-scaling-stroke"></path>
+</sc-for>
+</svg>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-600);padding-left:34px"><div>Aug 27</div><div>Now</div></div>
+<div style="display:flex;flex-direction:column;margin-top:4px">
+<div style="display:grid;grid-template-columns:20px minmax(0,1fr) 62px 52px;gap:8px;padding:6px 0;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-500);background:linear-gradient(to right,transparent,var(--color-divider) 48px,var(--color-divider) calc(100% - 48px),transparent) no-repeat bottom / 100% 1px">
+<div></div><div>Pollster</div><div>Latest</div><div style="text-align:right">Margin</div>
+</div>
+<sc-for list="{{ pollsters }}" as="p" hint-placeholder-count="4">
+<div style="display:grid;grid-template-columns:20px minmax(0,1fr) 62px 52px;gap:8px;align-items:center;min-height:44px;font-size:14px;background:linear-gradient(to right,transparent,color-mix(in srgb, var(--color-text) 8%, transparent) 48px,color-mix(in srgb, var(--color-text) 8%, transparent) calc(100% - 48px),transparent) no-repeat bottom / 100% 1px">
+<div style="width:14px;border-top:2px {{ p.dash }} {{ p.color }}"></div>
+<div style="display:flex;flex-direction:column;min-width:0">
+<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div>
+<div style="font-size:11px;color:var(--color-neutral-500)">{{ p.lean }}</div>
+</div>
+<div style="font-size:12px;color:var(--color-neutral-400)">{{ p.date }}</div>
+<div style="text-align:right;font-weight:500;color:{{ p.color }}">{{ p.margin }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const DL = 'oklch(0.72 0.1 245)', RL = 'oklch(0.72 0.11 25)';
+function rng(seed) { let s = seed * 7919; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+function series(seed, end, n, vol, lo, hi) {
+  const r = rng(seed); let v = end + (r() - 0.5) * (hi - lo) * 0.2; const w = [];
+  for (let i = 0; i < n; i++) { v += (r() - 0.5) * vol; w.push(v); }
+  const fix = end - w[n - 1];
+  return w.map((x, i) => Math.max(lo + 1, Math.min(hi - 1, x + fix * i / (n - 1))));
+}
+function path(arr, w, h, lo, hi) {
+  return arr.map((v, i) => (i ? 'L' : 'M') + (i / (arr.length - 1) * w).toFixed(1) + ' ' + (h - (v - lo) / (hi - lo) * h).toFixed(1)).join(' ');
+}
+const fmt = m => m === 0 ? 'Even' : (m > 0 ? 'D+' : 'R+') + Math.abs(m).toFixed(m % 1 ? 1 : 0);
+const POLLSTERS = [
+  { name: 'Pollster One', lean: 'Left-leaning', group: 'left', m: 5, date: 'Oct 22', color: DL, dash: 'solid', sd: '', seed: 41 },
+  { name: 'Pollster Two', lean: 'Left-leaning', group: 'left', m: 4, date: 'Oct 18', color: DL, dash: 'dashed', sd: '5 3', seed: 43 },
+  { name: 'Pollster Three', lean: 'Right-leaning', group: 'right', m: -2, date: 'Oct 21', color: RL, dash: 'solid', sd: '', seed: 47 },
+  { name: 'Pollster Four', lean: 'Right-leaning', group: 'right', m: 0, date: 'Oct 15', color: RL, dash: 'dashed', sd: '5 3', seed: 53 },
+];
+
+class Component extends DCLogic {
+  state = { range: '30d', show: { left: true, right: true, avg: true } };
+  renderVals() {
+    const { range, show } = this.state;
+    const tabs = ['Overview', 'Races', 'Live'].map((label, i) => ({
+      label, color: i === 1 ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+      ring: i === 1 ? 'inset 0 0 0 1px var(--color-accent)' : 'none',
+    }));
+    const n = range === '30d' ? 40 : 90, salt = range === '30d' ? 0 : 500;
+    const H = 150;
+    const yP = v => H - (v - 20) / 60 * H;
+    const mkt = {
+      p: path(series(11 + salt, 61, n, 5, 0, 100), 300, H, 20, 80),
+      k: path(series(112 + salt, 49, n, 5, 0, 100), 300, H, 20, 80),
+      from: range === '30d' ? 'Sep 26' : 'Jun 1',
+      grid: [70, 50, 30].map(v => ({ label: v + '%', top: (yP(v) + 4) + 'px', color: v === 50 ? 'var(--color-neutral-700)' : 'var(--color-neutral-800)' })),
+    };
+    const ranges = [['30d', '30D'], ['all', 'All'], ['night', 'Nov 3']].map(([id, label]) => ({
+      label, pick: id === 'night' ? () => {} : () => this.setState({ range: id }),
+      color: id === range ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+      ring: id === range ? 'inset 0 0 0 1px var(--color-accent)' : 'none',
+      op: id === 'night' ? 0.45 : 1,
+    }));
+    const lo = -10, hi = 10;
+    const yM = v => H - (v - lo) / (hi - lo) * H;
+    const lines = POLLSTERS.map(p => ({
+      d: path(series(p.seed, p.m, 12, 2.2, lo, hi), 300, H, lo, hi),
+      color: p.color, dash: p.sd, w: 1.75, op: show[p.group] ? 1 : 0.08,
+    }));
+    lines.unshift({ d: path(series(59, 2.1, 30, 0.9, lo, hi), 300, H, lo, hi), color: 'var(--color-neutral-300)', dash: '2 3', w: 2, op: show.avg ? 1 : 0.08 });
+    const avgOf = g => POLLSTERS.filter(p => p.group === g).reduce((s, p) => s + p.m, 0) / 2;
+    const toggle = k => () => this.setState(s => ({ show: { ...s.show, [k]: !s.show[k] } }));
+    const groups = [
+      { key: 'avg', label: 'All-poll avg', value: fmt(2.1), color: 'var(--color-neutral-200)', dash: 'dotted' },
+      { key: 'left', label: 'Left-leaning', value: fmt(avgOf('left')), color: DL, dash: 'solid' },
+      { key: 'right', label: 'Right-leaning', value: fmt(avgOf('right')), color: RL, dash: 'solid' },
+    ].map(g => ({ ...g, toggle: toggle(g.key), op: show[g.key] ? 1 : 0.45, ring: show[g.key] ? '0 0 0 1px var(--color-neutral-700)' : 'none' }));
+    const polls = {
+      lines,
+      grid: [5, 0, -5].map(v => ({ label: fmt(v), top: (yM(v) + 4) + 'px', color: v === 0 ? 'var(--color-neutral-700)' : 'var(--color-neutral-800)' })),
+    };
+    const pollsters = POLLSTERS.map(p => ({ ...p, margin: fmt(p.m) }));
+    return { tabs, mkt, ranges, groups, polls, pollsters };
+  }
+}
+</script>
+</body>
+</html>

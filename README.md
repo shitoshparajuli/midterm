@@ -77,6 +77,21 @@ and polls (all / nonpartisan / D-leaning / R-leaning):
   the polls overstated Democrats.
 - **calibration** bins for the markets (how often 60–70% favourites actually won, and so on)
 
+## UI
+
+Built from the Claude Design handoff in `design/design_handoff_midterm_tracker/` (Nocturne tokens,
+"The Spread"). Pages:
+
+| route | screen |
+|---|---|
+| `/` | Overview: Senate/House control odds over time, "races to watch" tiles (split calls first) |
+| `/races` | Searchable list of every race, with filters for office and split calls |
+| `/races/[key]` | Race detail: market chart (1H/1D/1W/30D/All/Nov 3) and a separate poll panel (all / left / right averages, poll dots, latest poll per pollster) |
+| `/live` | Election night: seat counts, control chart with race-call markers, scorecard at poll close, race rows |
+
+Polymarket is always purple and Kalshi amber. "Nov 3" unlocks at 7pm ET on election night
+(minute-level data from upstream). Poll-close times per state live in `src/lib/election.ts`.
+
 ## API
 
 | endpoint | notes |
@@ -87,6 +102,7 @@ and polls (all / nonpartisan / D-leaning / R-leaning):
 | `GET /api/polls?race=SEN-TX&lean=R` | raw polls with `pollsterLean` |
 | `GET /api/pollsters` | lean, affiliation and house effect |
 | `GET /api/accuracy?checkpoint=1d&office=senate` | scoring (see above) |
+| `GET /api/live` | everything the Live screen needs (refreshed every 60s on election night) |
 | `GET /api/status` | recent pipeline runs, for a "last updated" badge |
 
 Responses send `s-maxage` headers, so the Vercel CDN absorbs traffic (30s for the 1h chart,

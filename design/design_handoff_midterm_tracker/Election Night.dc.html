@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="_ds/nocturne-47613562-bb60-44af-a74d-6df658028d9c/styles.css"><script src="_ds/nocturne-47613562-bb60-44af-a74d-6df658028d9c/_ds_bundle.js"></script><style>input::placeholder{color:var(--color-neutral-500)}</style></helmet>
+<div style="background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-variant-numeric:tabular-nums;min-height:100%">
+<div style="max-width:1240px;margin:0 auto">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:18px 16px 0">
+<div style="flex:1 1 200px;display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<div style="font-size:19px;font-weight:500;letter-spacing:-0.015em">The Spread</div>
+<div style="font-size:12px;color:var(--color-neutral-500)">Nov 3 · 11:40 pm ET</div>
+</div>
+<div style="flex:1 1 340px;max-width:520px;display:flex;border:1px solid var(--color-divider);border-radius:var(--radius-md);overflow:hidden">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+<div style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;cursor:pointer;color:{{ t.color }};box-shadow:{{ t.ring }}" style-hover="background:color-mix(in srgb, var(--color-text) 7%, transparent)"><div style="width:6px;height:6px;border-radius:50%;background:var(--color-accent);display:{{ t.dot }};box-shadow:0 0 0 3px var(--color-accent-800)"></div>{{ t.label }}</div>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:20px 28px;padding:18px 16px 28px;align-items:flex-start">
+
+<div style="flex:1 1 480px;min-width:0;display:flex;flex-direction:column;gap:14px">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+<sc-for list="{{ chambers }}" as="c" hint-placeholder-count="2">
+<div onClick="{{ c.pick }}" style="background:var(--color-surface);border-radius:var(--radius-md);padding:12px;display:flex;flex-direction:column;gap:8px;cursor:pointer;box-shadow:{{ c.ring }}">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-300)">{{ c.name }}</div>
+<div style="font-size:11px;color:var(--color-neutral-500)">{{ c.need }} to win</div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<div style="font-size:22px;font-weight:500;color:oklch(0.72 0.1 245)">{{ c.d }} <span style="font-size:12px;color:var(--color-neutral-400)">Dem</span></div>
+<div style="font-size:12px;color:var(--color-neutral-500)">{{ c.u }} uncalled</div>
+<div style="font-size:22px;font-weight:500;color:oklch(0.72 0.11 25)"><span style="font-size:12px;color:var(--color-neutral-400)">Rep</span> {{ c.r }}</div>
+</div>
+<div style="position:relative;height:8px;border-radius:4px;overflow:hidden;display:flex;background:var(--color-neutral-800)">
+<div style="width:{{ c.dW }};background:oklch(0.72 0.1 245)"></div>
+<div style="flex:1"></div>
+<div style="width:{{ c.rW }};background:oklch(0.72 0.11 25)"></div>
+<div style="position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;left:{{ c.tick }};background:var(--color-text)"></div>
+</div>
+</div>
+</sc-for>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap">
+<div style="font-size:16px;font-weight:500">{{ chart.title }}</div>
+<div style="font-size:12px;color:var(--color-neutral-500)">Chance Dems win · since 7 pm</div>
+</div>
+<div style="display:flex;align-items:flex-end;gap:18px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="font-size:11px;color:var(--color-neutral-500)">Polymarket</div>
+<div style="font-size:26px;line-height:1;font-weight:500;color:var(--color-accent-400)">{{ chart.pv }}<span style="font-size:13px;color:var(--color-neutral-500)"> {{ chart.pd }}</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="font-size:11px;color:var(--color-neutral-500)">Kalshi</div>
+<div style="font-size:26px;line-height:1;font-weight:500;color:oklch(0.8 0.12 78)">{{ chart.kv }}<span style="font-size:13px;color:var(--color-neutral-500)"> {{ chart.kd }}</span></div>
+</div>
+</div>
+<div style="position:relative;height:170px;padding:10px 0 10px 30px">
+<sc-for list="{{ chart.grid }}" as="g" hint-placeholder-count="3">
+<div style="position:absolute;left:0;right:0;top:{{ g.top }};display:flex;align-items:center;gap:6px">
+<div style="font-size:10px;color:var(--color-neutral-600);width:24px">{{ g.label }}</div>
+<div style="flex:1;height:1px;background:{{ g.color }}"></div>
+</div>
+</sc-for>
+<div style="position:absolute;left:30px;right:0;top:4px;bottom:4px">
+<sc-for list="{{ chart.events }}" as="e" hint-placeholder-count="3">
+<div style="position:absolute;top:0;bottom:0;left:{{ e.x }};width:1px;background:var(--color-neutral-700)">
+<div style="position:absolute;top:0;left:-9px;width:18px;height:18px;border-radius:50%;background:var(--color-bg);box-shadow:0 0 0 1px var(--color-neutral-600);font-size:10px;display:flex;align-items:center;justify-content:center;color:var(--color-neutral-300)">{{ e.n }}</div>
+</div>
+</sc-for>
+</div>
+<svg width="100%" height="150" viewBox="0 0 300 150" preserveAspectRatio="none" style="display:block;position:relative">
+<path d="{{ chart.k }}" fill="none" style="stroke:oklch(0.8 0.12 78)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+<path d="{{ chart.p }}" fill="none" style="stroke:var(--color-accent)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-600);padding-left:30px"><div>7 pm</div><div>9 pm</div><div>11 pm</div><div>Now</div></div>
+<div style="display:flex;flex-direction:column;gap:4px;margin-top:2px">
+<sc-for list="{{ chart.events }}" as="e" hint-placeholder-count="3">
+<div style="display:flex;gap:8px;font-size:12px;color:var(--color-neutral-400)"><div style="width:14px;color:var(--color-neutral-300)">{{ e.n }}</div><div style="width:52px">{{ e.t }}</div><div style="flex:1;min-width:0">{{ e.label }}</div></div>
+</sc-for>
+</div>
+</div>
+
+<div style="border-radius:var(--radius-md);box-shadow:var(--shadow-sm);padding:12px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-300)">Scorecard · {{ score.called }} races called</div>
+<div style="font-size:11px;color:var(--color-neutral-500)">Odds at poll close</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="font-size:11px;color:var(--color-neutral-500)">Polymarket</div>
+<div style="font-size:22px;font-weight:500;color:var(--color-accent-400)">{{ score.p }}<span style="font-size:13px;color:var(--color-neutral-500)"> right</span></div>
+<div style="font-size:12px;color:var(--color-neutral-400)">Brier {{ score.pb }}</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="font-size:11px;color:var(--color-neutral-500)">Kalshi</div>
+<div style="font-size:22px;font-weight:500;color:oklch(0.8 0.12 78)">{{ score.k }}<span style="font-size:13px;color:var(--color-neutral-500)"> right</span></div>
+<div style="font-size:12px;color:var(--color-neutral-400)">Brier {{ score.kb }}</div>
+</div>
+</div>
+<div style="font-size:12px;line-height:1.45;color:var(--color-neutral-500);text-wrap:pretty">"Right" means the market had the winner above 50%. Brier score measures how confident it was: 0 is perfect, lower is better.</div>
+</div>
+</div>
+
+<div style="flex:1 1 400px;min-width:0;display:flex;flex-direction:column;gap:10px">
+<div style="position:relative">
+<input value="{{ q }}" onInput="{{ onQ }}" placeholder="Search state, race or candidate" style="width:100%;height:44px;padding:0 12px 0 36px;font:inherit;font-size:14px;color:var(--color-text);caret-color:var(--color-accent);background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md);outline:none" style-focus="border-color:var(--color-accent)">
+<div style="position:absolute;left:13px;top:15px;width:11px;height:11px;border-radius:50%;border:1.5px solid var(--color-neutral-400);pointer-events:none"></div>
+<div style="position:absolute;left:23px;top:25px;width:5px;height:1.5px;background:var(--color-neutral-400);transform:rotate(45deg);pointer-events:none"></div>
+</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+<div onClick="{{ f.pick }}" style="font-size:12px;padding:0 11px;height:32px;display:flex;align-items:center;gap:6px;border-radius:16px;cursor:pointer;white-space:nowrap;border:1px solid {{ f.border }};color:{{ f.color }}">{{ f.label }}<span style="color:var(--color-neutral-500)">{{ f.count }}</span></div>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column">
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+<div style="display:flex;flex-direction:column;gap:7px;padding:12px 0;cursor:pointer;background:linear-gradient(to right,transparent,var(--color-divider) 48px,var(--color-divider) calc(100% - 48px),transparent) no-repeat bottom / 100% 1px">
+<div style="display:flex;align-items:center;gap:8px">
+<div style="display:flex;align-items:baseline;gap:6px;min-width:0;flex:1">
+<div style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div>
+<div style="font-size:11px;color:var(--color-neutral-500);white-space:nowrap">{{ r.type }}</div>
+</div>
+<div style="font-size:11px;padding:3px 8px;border-radius:6px;white-space:nowrap;background:{{ r.sBg }};color:{{ r.sFg }}">{{ r.status }}</div>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<div style="flex:1;display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--color-neutral-800)">
+<div style="width:{{ r.aW }};background:{{ r.aC }}"></div><div style="flex:1"></div><div style="width:{{ r.bW }};background:{{ r.bC }}"></div>
+</div>
+<div style="font-size:12px;color:var(--color-neutral-400);white-space:nowrap;flex:none;text-align:right">{{ r.vote }}</div>
+</div>
+<div style="display:flex;align-items:center;gap:14px">
+<div style="display:flex;align-items:baseline;gap:5px;font-size:13px"><span style="color:var(--color-neutral-500);font-size:11px">P</span><span style="color:var(--color-neutral-500)">{{ r.p0 }} →</span><span style="color:var(--color-accent-400);font-weight:500">{{ r.p1 }}</span><span style="color:{{ r.pMarkC }}">{{ r.pMark }}</span></div>
+<div style="display:flex;align-items:baseline;gap:5px;font-size:13px"><span style="color:var(--color-neutral-500);font-size:11px">K</span><span style="color:var(--color-neutral-500)">{{ r.k0 }} →</span><span style="color:oklch(0.8 0.12 78);font-weight:500">{{ r.k1 }}</span><span style="color:{{ r.kMarkC }}">{{ r.kMark }}</span></div>
+<svg width="72" height="22" viewBox="0 0 72 22" style="display:block;margin-left:auto;flex:none">
+<path d="{{ r.sk }}" fill="none" style="stroke:oklch(0.8 0.12 78)" stroke-width="1.5"></path>
+<path d="{{ r.sp }}" fill="none" style="stroke:var(--color-accent)" stroke-width="1.5"></path>
+</svg>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+<div style="padding:24px 0;font-size:14px;color:var(--color-neutral-400)">No races match "{{ q }}".</div>
+</sc-if>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const DL = 'oklch(0.72 0.1 245)', RL = 'oklch(0.72 0.11 25)', OK = 'var(--color-neutral-100)', NO = 'var(--color-neutral-500)';
+// p0/k0 = chance for side A at poll close; p1/k1 = now; win = 'a' | 'b' | null
+const RACES = [
+  { name: 'Lakeshore', type: 'Senate', a: 'D', b: 'R', va: 51.2, vb: 47.9, rep: 91, p0: 61, p1: 99, k0: 49, k1: 98, win: 'a', seed: 11 },
+  { name: 'Northland', type: 'Senate', a: 'D', b: 'R', va: 49.9, vb: 49.1, rep: 64, p0: 52, p1: 58, k0: 58, k1: 55, win: null, seed: 29 },
+  { name: 'Ashford', type: 'Senate', a: 'D', b: 'R', va: 44.6, vb: 54.1, rep: 88, p0: 38, p1: 1, k0: 36, k1: 2, win: 'b', seed: 37 },
+  { name: 'Cedar Falls', type: 'Senate', a: 'D', b: 'R', va: 48.0, vb: 50.6, rep: 12, p0: 45, p1: 40, k0: 47, k1: 41, win: null, seed: 61 },
+  { name: 'Pine Hollow 03', type: 'House', a: 'D', b: 'R', va: 48.4, vb: 50.5, rep: 40, p0: 47, p1: 36, k0: 55, k1: 41, win: null, seed: 19 },
+  { name: 'Bayview 07', type: 'House', a: 'D', b: 'R', va: 46.2, vb: 52.9, rep: 95, p0: 44, p1: 1, k0: 40, k1: 1, win: 'b', seed: 67 },
+  { name: 'Silver Ridge 02', type: 'House', a: 'D', b: 'R', va: 50.8, vb: 48.3, rep: 97, p0: 41, p1: 99, k0: 52, k1: 99, win: 'a', seed: 71 },
+  { name: 'Redmesa', type: 'Governor', a: 'D', b: 'R', va: 54.3, vb: 44.8, rep: 82, p0: 71, p1: 99, k0: 69, k1: 99, win: 'a', seed: 31 },
+  { name: 'Granite', type: 'Governor', a: 'D', b: 'R', va: 51.3, vb: 47.9, rep: 77, p0: 66, p1: 88, k0: 60, k1: 84, win: null, seed: 73 },
+  { name: 'Measure 12', type: 'Ballot', a: 'Yes', b: 'No', va: 42.7, vb: 57.3, rep: 85, p0: 33, p1: 1, k0: 41, k1: 2, win: 'b', seed: 23 },
+];
+function rng(seed) { let s = seed * 7919; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+function walk(seed, start, end, n, vol) {
+  const r = rng(seed); const w = []; let v = start;
+  for (let i = 0; i < n; i++) { const t = i / (n - 1); v += (r() - 0.5) * vol; w.push(start + (end - start) * Math.pow(t, 1.6) + (v - start) * (1 - t)); }
+  w[n - 1] = end; return w.map(x => Math.max(1, Math.min(99, x)));
+}
+function path(arr, w, h, lo, hi) {
+  return arr.map((v, i) => (i ? 'L' : 'M') + (i / (arr.length - 1) * w).toFixed(1) + ' ' + (h - (v - lo) / (hi - lo) * h).toFixed(1)).join(' ');
+}
+const brier = (key) => {
+  const c = RACES.filter(r => r.win); const s = c.reduce((acc, r) => { const f = r[key] / 100, o = r.win === 'a' ? 1 : 0; return acc + (f - o) ** 2; }, 0);
+  return (s / c.length).toFixed(2);
+};
+const ROWS = RACES.map(r => {
+  const called = !!r.win, early = r.rep < 20;
+  const right = k => (r[k] > 50) === (r.win === 'a');
+  const status = called ? 'Called · ' + (r.win === 'a' ? r.a : r.b) : early ? 'Too early' : 'Counting';
+  const partyC = s => s === 'D' ? DL : s === 'R' ? RL : s === 'Yes' ? 'var(--color-neutral-300)' : 'var(--color-neutral-600)';
+  return {
+    ...r, called, filterKey: called ? 'called' : 'counting', split: (r.p0 > 50) !== (r.k0 > 50),
+    status, sBg: called ? 'var(--color-neutral-800)' : 'var(--color-accent-900)', sFg: called ? 'var(--color-neutral-100)' : 'var(--color-accent-300)',
+    aW: r.va + '%', bW: r.vb + '%', aC: partyC(r.a), bC: partyC(r.b),
+    vote: `${r.a} ${r.va} · ${r.b} ${r.vb} · ${r.rep}%`,
+    pMark: called ? (right('p0') ? '✓' : '✗') : '', kMark: called ? (right('k0') ? '✓' : '✗') : '',
+    pMarkC: right('p0') ? OK : NO, kMarkC: right('k0') ? OK : NO,
+    sp: path(walk(r.seed, r.p0, r.p1, 24, 10), 72, 22, 0, 100), sk: path(walk(r.seed + 9, r.k0, r.k1, 24, 10), 72, 22, 0, 100),
+  };
+});
+const CH = {
+  sen: { name: 'Senate', title: 'Senate control', need: 51, d: 47, r: 49, u: 4, p0: 44, p1: 31, k0: 49, k1: 35, seed: 3,
+    events: [{ t: '8:05 pm', f: 0.22, label: 'Ashford called R' }, { t: '9:40 pm', f: 0.5, label: 'Lakeshore called D · both markets jump' }, { t: '10:55 pm', f: 0.75, label: 'Cedar Falls first returns lean R' }] },
+  house: { name: 'House', title: 'House control', need: 218, d: 203, r: 196, u: 36, p0: 68, p1: 74, k0: 63, k1: 71, seed: 7,
+    events: [{ t: '8:30 pm', f: 0.3, label: 'Bayview 07 called R' }, { t: '10:10 pm', f: 0.6, label: 'Silver Ridge 02 called D' }] },
+};
+const TOTAL = { sen: 100, house: 435 };
+
+class Component extends DCLogic {
+  state = { q: '', filter: 'all', chamber: 'sen' };
+  renderVals() {
+    const { q, filter, chamber } = this.state;
+    const tabs = ['Overview', 'Races', 'Live'].map((label, i) => ({
+      label, color: i === 2 ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+      ring: i === 2 ? 'inset 0 0 0 1px var(--color-accent)' : 'none', dot: i === 2 ? 'block' : 'none',
+    }));
+    const chambers = ['sen', 'house'].map(id => {
+      const c = CH[id], T = TOTAL[id];
+      return { ...c, dW: c.d / T * 100 + '%', rW: c.r / T * 100 + '%', tick: c.need / T * 100 + '%', pick: () => this.setState({ chamber: id }),
+        ring: id === chamber ? '0 0 0 1px var(--color-accent)' : 'none' };
+    });
+    const c = CH[chamber];
+    const H = 150, d = (a, b) => (b - a > 0 ? '+' : '−') + Math.abs(b - a);
+    const chart = {
+      title: c.title, pv: c.p1 + '%', kv: c.k1 + '%', pd: d(c.p0, c.p1), kd: d(c.k0, c.k1),
+      p: path(walk(c.seed, c.p0, c.p1, 60, 5), 300, H, 0, 100), k: path(walk(c.seed + 9, c.k0, c.k1, 60, 5), 300, H, 0, 100),
+      grid: [75, 50, 25].map(v => ({ label: v + '%', top: (H - v / 100 * H + 4) + 'px', color: v === 50 ? 'var(--color-neutral-700)' : 'var(--color-neutral-900)' })),
+      events: c.events.map((e, i) => ({ ...e, n: i + 1, x: e.f * 100 + '%' })),
+    };
+    const called = ROWS.filter(r => r.called);
+    const score = {
+      called: called.length,
+      p: called.filter(r => r.pMark === '✓').length + '/' + called.length,
+      k: called.filter(r => r.kMark === '✓').length + '/' + called.length,
+      pb: brier('p0'), kb: brier('k0'),
+    };
+    const ql = q.trim().toLowerCase();
+    const matchQ = ROWS.filter(r => !ql || (r.name + ' ' + r.type).toLowerCase().includes(ql));
+    const defs = [['all', 'All', () => true], ['counting', 'Counting', r => !r.called], ['called', 'Called', r => r.called], ['split', 'Split calls', r => r.split]];
+    const filters = defs.map(([id, label, fn]) => ({
+      label, count: matchQ.filter(fn).length, pick: () => this.setState({ filter: id }),
+      border: id === filter ? 'var(--color-accent)' : 'var(--color-divider)',
+      color: id === filter ? 'var(--color-accent)' : 'var(--color-neutral-300)',
+    }));
+    const rows = matchQ.filter(defs.find(x => x[0] === filter)[2]).sort((a, b) => a.called - b.called);
+    return { tabs, chambers, chart, score, q, onQ: e => this.setState({ q: e.target.value }), filters, rows, empty: rows.length === 0 };
+  }
+}
+</script>
+</body>
+</html>
