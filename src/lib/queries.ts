@@ -29,14 +29,14 @@ export async function primaryMarkets(raceKeys?: string[]) {
   return out;
 }
 
-const demProb = (d?: number | null, r?: number | null) => {
+export const demProb = (d?: number | null, r?: number | null) => {
   if (d != null && r != null && d + r > 0) return d / (d + r);
   if (d != null) return d;
   if (r != null) return 1 - r;
   return null;
 };
 
-async function leanMap() {
+export async function leanMap() {
   const rows = await db.select({ name: schema.pollsters.name, lean: schema.pollsters.lean }).from(schema.pollsters);
   const m = new Map(rows.map((r) => [r.name, r.lean]));
   return (name: string) => m.get(name) ?? null;
@@ -249,7 +249,7 @@ export const ELECTION_MORNING = Date.parse("2026-11-03T11:00:00Z");
 export const CHECKPOINTS = { "30d": 30, "7d": 7, "1d": 1, "0d": 0 } as const;
 export type Checkpoint = keyof typeof CHECKPOINTS;
 
-async function priceAt(ids: string[], at: Date) {
+export async function priceAt(ids: string[], at: Date) {
   if (!ids.length) return new Map<string, number>();
   const rows = await db.execute<{ market_id: string; price: number }>(sql`
     select distinct on (market_id) market_id, price from price_points

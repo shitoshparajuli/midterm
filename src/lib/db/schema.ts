@@ -136,3 +136,60 @@ export const pipelineRuns = pgTable("pipeline_runs", {
   ok: boolean("ok"),
   detail: jsonb("detail"),
 });
+
+/**
+ * A frozen set of projections (e.g. "2026-final", taken Nov 2, 9pm ET). Never overwritten:
+ * this is what gets scored against results, now and in future cycles.
+ */
+export const forecastLocks = pgTable("forecast_locks", {
+  id: text("id").primaryKey(),
+  asOf: timestamp("as_of", { withTimezone: true }).notNull(), // the moment the projections represent
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  note: text("note"),
+});
+
+/**
+ * One source's projection for one race inside a lock.
+ * source: polymarket | kalshi | polls:all | polls:nonpartisan | polls:D | polls:R | pollster:<name>
+ */
+export const forecasts = pgTable(
+  "forecasts",
+  {
+    lockId: text("lock_id")
+      .notNull()
+      .references(() => forecastLocks.id),
+    raceKey: text("race_key")
+      .notNull()
+      .references(() => races.key),
+    source: text("source").notNull(),
+    demWinProb: real("dem_win_prob"), // 0..1
+    margin: real("margin"), // projected D−R vote margin in points (polls)
+    detail: jsonb("detail").notNull(), // inputs: prices, market ids, volume, poll ids/dates, ...
+  },
+  (t) => [primaryKey({ columns: [t.lockId, t.raceKey, t.source] }), index("forecasts_source").on(t.lockId, t.source)],
+);
+
+/**
+ * Scores per lock, source and scope ("all", "office:senate", "state:TX"). Recomputed as results
+ * come in; kept so cycles can be compared later.
+ */
+export const forecastScores = pgTable(
+  "forecast_scores",
+  {
+    lockId: text("lock_id")
+      .notNull()
+      .references(() => forecastLocks.id),
+    source: text("source").notNull(),
+    scope: text("scope").notNull(),
+    n: integer("n").notNull(), // races scored (winner known, source had a projection)
+    correct: real("correct").notNull(), // winner called (> 50%); exact 50% counts as half
+    brier: real("brier"),
+    logLoss: real("log_loss"),
+    avgWinnerProb: real("avg_winner_prob"), // mean chance given to the eventual winner
+    marginN: integer("margin_n").notNull().default(0),
+    marginBias: real("margin_bias"), // mean (projected − actual) D−R margin; + = overstated Dems
+    marginMae: real("margin_mae"),
+    computedAt: timestamp("computed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.lockId, t.source, t.scope] })],
+);

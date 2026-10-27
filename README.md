@@ -38,6 +38,8 @@ Next.js on Vercel · Postgres (Neon) · data pipeline on GitHub Actions.
 | `prices` | Incremental **hourly** price history for each market (the first run backfills `BACKFILL_DAYS`). It stores a point only when the price moves, plus a 6-hour heartbeat. Markets under `MIN_MARKET_VOLUME` (default $10k) are skipped; their charts load live from upstream instead. |
 | `polls` | Pulls VoteHub polls (`us-senator`, `governor`, `us-representative`, `generic-ballot`), maps each one to a race, and works out the D−R margin by matching poll answers to candidate parties learned from the markets. |
 | `pollsters` | Classifies each pollster's lean (see below). |
+| `lock` | Once **Nov 2, 9pm ET** has passed, freezes every source's projection for every race into `forecasts` under lock `2026-final` (see below). Runs once; never overwrites. |
+| `scores` | Re-scores every lock against the latest results and stores the numbers in `forecast_scores`. |
 | `results` | Marks a race's winner when a "party X wins" contract settles YES. An optional `data/results.csv` overrides this and adds vote shares (needed to score poll *margins*). |
 
 ### Race-level probability
@@ -66,6 +68,30 @@ Poll averages (`src/lib/poll-average.ts`) weight polls by recency (14-day half-l
 `Φ(margin / σ)`, where σ = 6.5 pts (Senate/Gov) or 7.5 (House), roughly the historical polling
 error.
 
+### Locked projections and the scorecard
+
+The headline comparison uses projections frozen at **9pm ET on Nov 2** (`FINAL_LOCK_AT` in
+`src/lib/election.ts`). The first pipeline run after that moment takes a snapshot *as of* 9pm, using
+stored price history and only polls that ended by then, so a delayed run still locks the 9pm numbers.
+
+- `forecast_locks`: one row per lock (`2026-final`)
+- `forecasts`: one row per lock × race × source. Sources: `polymarket`, `kalshi`, `polls:all`,
+  `polls:nonpartisan`, `polls:D`, `polls:R`, and `pollster:<name>` (each pollster's latest poll in the
+  race, within 60 days). Stores P(D), the poll margin, and the raw inputs (`detail`).
+- `forecast_scores`: per lock × source × scope (`all`, `office:senate`, `state:TX`, ...): races
+  scored, winners called (an exact 50% counts as half), Brier, log loss, average chance given to the
+  winner, and for polls the margin bias / mean absolute miss. Chamber control is scored on its own.
+
+`/scorecard` shows the source leaderboard by office, calibration, a pollster leaderboard (pollsters
+with 3+ scored races are ranked first) and a state-by-state ✓/✗ table. Before the lock it previews
+today's numbers. `GET /api/scorecard?format=csv` downloads the locked projections next to the results.
+
+Poll *margin* scoring needs vote shares: add them to `data/results.csv` as results are certified and
+commit it. The next pipeline run picks them up and re-scores.
+
+Test locks (any id other than `2026-final`): `LOCK_ID=test LOCK_AT=now LOCK_FORCE=1 pnpm pipeline lock scores`,
+then view `/scorecard?lock=test`.
+
 ### Accuracy (`/api/accuracy?checkpoint=30d|7d|1d|0d`)
 
 For every race with a winner, each source's P(D) is taken at the checkpoint (days before
@@ -87,6 +113,7 @@ Built from the Claude Design handoff in `design/design_handoff_midterm_tracker/`
 | `/` | Overview: Senate/House control odds over time, "races to watch" tiles (split calls first) |
 | `/races` | Searchable list of every race, with filters for office and split calls |
 | `/races/[key]` | Race detail: market chart (1H/1D/1W/30D/All/Nov 3) and a separate poll panel (all / left / right averages, poll dots, latest poll per pollster) |
+| `/scorecard` | Locked Nov 2 projections vs results: leaderboard, calibration, pollsters, state by state |
 | `/live` | Election night: seat counts, control chart with race-call markers, scorecard at poll close, race rows |
 
 Polymarket is always purple and Kalshi amber. "Nov 3" unlocks at 7pm ET on election night
@@ -102,6 +129,7 @@ Polymarket is always purple and Kalshi amber. "Nov 3" unlocks at 7pm ET on elect
 | `GET /api/polls?race=SEN-TX&lean=R` | raw polls with `pollsterLean` |
 | `GET /api/pollsters` | lean, affiliation and house effect |
 | `GET /api/accuracy?checkpoint=1d&office=senate` | scoring (see above) |
+| `GET /api/scorecard[?lock=&format=csv]` | locked projections scored against results |
 | `GET /api/live` | everything the Live screen needs (refreshed every 60s on election night) |
 | `GET /api/status` | recent pipeline runs, for a "last updated" badge |
 

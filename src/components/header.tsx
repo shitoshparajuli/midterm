@@ -10,6 +10,7 @@ const TABS = [
   { id: "overview", label: "Overview", href: "/" },
   { id: "races", label: "Races", href: "/races" },
   { id: "live", label: "Live", href: "/live" },
+  { id: "scorecard", label: "Scorecard", href: "/scorecard" },
 ] as const;
 
 function meta(now: number | null) {

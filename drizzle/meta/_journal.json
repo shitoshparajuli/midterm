@@ -8,6 +8,13 @@
       "when": 1793069198449,
       "tag": "0000_spotty_radioactive_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793083068268,
+      "tag": "0001_regular_husk",
+      "breakpoints": true
     }
   ]
 }

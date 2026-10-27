@@ -1,14 +1,22 @@
 "use client";
 
-export function SearchBox({ value, onChange }: { value: string; onChange: (q: string) => void }) {
+export function SearchBox({
+  value,
+  onChange,
+  placeholder = "Search state, race or candidate",
+}: {
+  value: string;
+  onChange: (q: string) => void;
+  placeholder?: string;
+}) {
   return (
     <div className="search">
       <input
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Search state, race or candidate"
-        aria-label="Search races"
+        placeholder={placeholder}
+        aria-label={placeholder}
       />
       {/* Phosphor MagnifyingGlass */}
       <svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden>

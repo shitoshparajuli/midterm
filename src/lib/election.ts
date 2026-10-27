@@ -29,3 +29,7 @@ export function pollCloseAt(state: string | null): number {
 
 export const isNight = (now = Date.now()) => now >= NIGHT_START && now < NIGHT_END;
 export const nightStarted = (now = Date.now()) => now >= NIGHT_START;
+
+/** Final projections are frozen at 9pm ET on Nov 2 (EST, UTC−5) and scored against results. */
+export const FINAL_LOCK_ID = "2026-final";
+export const FINAL_LOCK_AT = Date.parse("2026-11-03T02:00:00Z");
