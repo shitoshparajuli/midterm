@@ -1,0 +1,3 @@
+race_key,winner_party,dem_pct,rep_pct,called_at,source
+# copy to data/results.csv; dem_pct/rep_pct are two-party or raw vote shares (be consistent)
+SEN-TX,D,50.8,48.1,2026-11-04T05:12:00Z,AP

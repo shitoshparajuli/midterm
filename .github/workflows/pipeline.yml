@@ -1,0 +1,33 @@
+name: data pipeline
+
+on:
+  schedule:
+    # Every 15 min. GitHub may delay scheduled runs by a few minutes; charts for 1h/1d
+    # ranges are served live from upstream, so this only affects stored history + race list.
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      steps:
+        description: "steps to run (discover prices polls pollsters results | all)"
+        default: "all"
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm pipeline ${{ inputs.steps || 'all' }}

@@ -1,0 +1,52 @@
+{
+  "_comment": "Curated: which party a pollster mostly works for (D/R), or N for explicitly bipartisan teams. Pollsters not listed are classified from their computed house effect. Edit freely; names must match VoteHub's pollster field (case-insensitive).",
+  "D": [
+    "Public Policy Polling",
+    "Data for Progress",
+    "Navigator Research",
+    "GQR",
+    "Hart Research Associates",
+    "Global Strategy Group",
+    "GBAO Strategies",
+    "Tulchin Research",
+    "Normington, Petts & Associates",
+    "DCCC Targeting and Analytics Department",
+    "Change Research",
+    "Tavern Research",
+    "Slingshot Strategies",
+    "Impact Research",
+    "Lake Research Partners",
+    "Benenson Strategy Group",
+    "Garin-Hart-Yang Research Group",
+    "Blueprint Polling",
+    "Myers Research"
+  ],
+  "R": [
+    "Trafalgar Group",
+    "InsiderAdvantage",
+    "Quantus Insights",
+    "co/efficient",
+    "Cygnal",
+    "Fabrizio, Lee & Associates",
+    "McLaughlin & Associates",
+    "Big Data Poll",
+    "Rasmussen Reports",
+    "RMG Research",
+    "Public Opinion Strategies",
+    "Remington Research Group",
+    "Victory Insights",
+    "The Tarrance Group",
+    "OnMessage Inc.",
+    "National Public Affairs",
+    "Guidant Polling and Strategy",
+    "New River Strategies/GS Strategy Group",
+    "GS Strategy Group",
+    "American Pulse Research & Polling",
+    "Wick Insights"
+  ],
+  "N": [
+    "Fabrizio, Lee & Associates/Impact Research",
+    "Fabrizio Ward/Impact Research",
+    "Beacon Research/Shaw & Co. Research"
+  ]
+}

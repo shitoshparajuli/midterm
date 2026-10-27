@@ -1,0 +1,11 @@
+{
+  "_comment": "Party for candidates whose market labels don't say it (e.g. Alaska top-four). Exact names as the market lists them, minus honorifics like 'Sen.'. Also used to match poll answers.",
+  "SEN-AK": {
+    "Dan Sullivan": "R",
+    "Mary Peltola": "D"
+  },
+  "GOV-AK": {
+    "Jonathan Kreiss-Tomkins": "D",
+    "Bernadette Wilson": "R"
+  }
+}
