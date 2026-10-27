@@ -2,6 +2,9 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
+if (process.env.VERCEL && !process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set for this deployment (add it in Vercel, then redeploy)");
+}
 const url = process.env.DATABASE_URL ?? "postgres://postgres:postgres@127.0.0.1:5432/postgres";
 
 // Reuse the client across hot reloads / warm serverless invocations.
