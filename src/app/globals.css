@@ -387,6 +387,12 @@ a {
   border-radius: var(--radius-md);
   outline: none;
 }
+/* iOS Safari zooms into inputs under 16px and doesn't zoom back out. */
+@media (pointer: coarse) {
+  .search input {
+    font-size: 16px;
+  }
+}
 .search input:focus {
   border-color: var(--color-accent);
 }

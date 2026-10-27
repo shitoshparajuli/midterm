@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { searchRaces } from "@/lib/search";
 import { fmtPct, officeLabel, raceName } from "@/lib/format";
 
@@ -29,26 +28,49 @@ const loadIndex = () =>
 
 /** Header search: state, race or candidate → race page. */
 export function GlobalSearch() {
-  const router = useRouter();
   const listId = useId();
   const [index, setIndex] = useState<Entry[] | null>(null);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const box = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+
+  // Close on taps/clicks outside. (Not on blur: iOS Safari blurs the input before a tap on a
+  // result lands, which would unmount the result and swallow the tap.)
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [open]);
 
   const all = index ? searchRaces(index, q) : [];
   const hits = all.slice(0, MAX);
   const showAll = all.length > MAX;
 
-  const go = (href: string) => {
-    setOpen(false);
-    setQ("");
-    router.push(href);
+  // Navigation is left to the <Link>s; this just tidies up when one is followed.
+  // Following a result hides the dropdown but keeps it mounted: unmounting the clicked <Link>
+  // mid-navigation can cancel the navigation. Each page renders its own header, so the search
+  // starts fresh on the next page.
+  const [leaving, setLeaving] = useState(false);
+  const close = () => {
+    setLeaving(true);
+    input.current?.blur(); // dismiss the mobile keyboard
   };
 
+
   return (
-    <div className="search global-search" onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setOpen(false)}>
+    <div
+      ref={box}
+      className="search global-search"
+      // Keyboard users tabbing away (relatedTarget is set); taps are handled above.
+      onBlur={(e) => e.relatedTarget && !e.currentTarget.contains(e.relatedTarget) && setOpen(false)}
+    >
       <input
+        ref={input}
         type="search"
         value={q}
         placeholder="Search state or candidate"
@@ -59,12 +81,14 @@ export function GlobalSearch() {
         aria-activedescendant={open && hits[active] ? `${listId}-${active}` : undefined}
         onFocus={() => {
           setOpen(true);
+          setLeaving(false);
           if (!index) loadIndex().then(setIndex);
         }}
         onChange={(e) => {
           setQ(e.target.value);
           setActive(0);
           setOpen(true);
+          setLeaving(false);
         }}
         onKeyDown={(e) => {
           if (e.key === "ArrowDown") {
@@ -75,7 +99,7 @@ export function GlobalSearch() {
             setActive((a) => Math.max(a - 1, 0));
           } else if (e.key === "Enter" && hits[active]) {
             e.preventDefault();
-            go(`/races/${hits[active].r.key}`);
+            document.getElementById(`${listId}-${active}`)?.click();
           } else if (e.key === "Escape") {
             setOpen(false);
           }
@@ -86,7 +110,7 @@ export function GlobalSearch() {
         <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z" />
       </svg>
       {open && q.trim() && (
-        <div className="search-pop" id={listId} role="listbox">
+        <div className="search-pop" id={listId} role="listbox" hidden={leaving}>
           {!index ? (
             <div className="search-note">Loading…</div>
           ) : !hits.length ? (
@@ -102,10 +126,7 @@ export function GlobalSearch() {
                   href={`/races/${r.key}`}
                   className="search-hit"
                   onMouseEnter={() => setActive(i)}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    go(`/races/${r.key}`);
-                  }}
+                  onClick={close}
                 >
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
@@ -132,10 +153,7 @@ export function GlobalSearch() {
                 <Link
                   href={`/races?q=${encodeURIComponent(q.trim())}`}
                   className="search-hit search-all"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    go(`/races?q=${encodeURIComponent(q.trim())}`);
-                  }}
+                  onClick={close}
                 >
                   See all {all.length} results
                 </Link>
