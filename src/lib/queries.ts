@@ -12,6 +12,7 @@ export type Platform = (typeof PLATFORMS)[number];
 
 /** Highest-volume D and R contract per platform for each race. */
 export async function primaryMarkets(raceKeys?: string[]) {
+  if (raceKeys && !raceKeys.length) return new Map<string, Record<Platform, { D?: Market; R?: Market }>>();
   const rows = await db.execute<{ id: string }>(sql`
     select distinct on (race_key, platform, party) id
     from markets
@@ -133,10 +134,10 @@ async function storedHistory(ids: string[], start: number): Promise<Map<string, 
   // Points in range plus the last point before it (so the line starts at the left edge).
   const rows = await db.execute<{ market_id: string; ts: string; price: number }>(sql`
     select market_id, ts, price from price_points
-    where market_id in ${ids} and ts >= ${startDate}
+    where market_id in ${ids} and ts >= ${startDate.toISOString()}
     union all
     select distinct on (market_id) market_id, ts, price from price_points
-    where market_id in ${ids} and ts < ${startDate}
+    where market_id in ${ids} and ts < ${startDate.toISOString()}
     order by market_id, ts desc`);
   for (const r of rows) {
     const pts = out.get(r.market_id) ?? [];
@@ -223,7 +224,7 @@ async function priceAt(ids: string[], at: Date) {
   if (!ids.length) return new Map<string, number>();
   const rows = await db.execute<{ market_id: string; price: number }>(sql`
     select distinct on (market_id) market_id, price from price_points
-    where market_id in ${ids} and ts <= ${at}
+    where market_id in ${ids} and ts <= ${at.toISOString()}
     order by market_id, ts desc`);
   return new Map(rows.map((r) => [r.market_id, r.price]));
 }
