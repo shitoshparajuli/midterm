@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LineChart, type ChartPt } from "./line-chart";
-import { fmtDate, fmtTime } from "@/lib/format";
+import { DEM_AXIS, LineChart, partyBands, REP_AXIS, type ChartPt } from "./line-chart";
+import { fmtDate, fmtTime, lead } from "@/lib/format";
 import { nightStarted } from "@/lib/election";
 
 export type Range = "1h" | "1d" | "1w" | "30d" | "all" | "night";
@@ -88,6 +88,12 @@ export function Legend() {
   );
 }
 
+/** End label for a P(D) value: the favourite and their chance ("R 58%"). */
+const endText = (v: number) => {
+  const l = lead(v / 100)!;
+  return l.party ? `${l.party} ${l.pct}%` : "50%";
+};
+
 const toPts = (s: { t: number; p: number }[]): ChartPt[] => s.map((x) => ({ t: x.t, v: x.p * 100 }));
 
 /** Market P(D) chart for one race: Kalshi under Polymarket, auto 20–80% or 0–100% axis. */
@@ -111,7 +117,15 @@ export function MarketLines({
   const vals = [...p, ...k].map((x) => x.v);
   const narrow = vals.length > 0 && Math.min(...vals) >= 20 && Math.max(...vals) <= 80;
   const domain: [number, number] = narrow ? [20, 80] : [0, 100];
-  const grid = (narrow ? [70, 50, 30] : [75, 50, 25]).map((v) => ({ v, label: `${v}%` }));
+  // P(D) above 50 reads as "Dem favored", below as "Rep favored": label both sides by party.
+  const grid = (narrow ? [70, 50, 30] : [75, 50, 25]).map((v) =>
+    v === 50
+      ? { v, label: "50%" }
+      : v > 50
+        ? { v, label: `D ${v}`, color: DEM_AXIS }
+        : { v, label: `R ${100 - v}`, color: REP_AXIS },
+  );
+  const bands = partyBands(domain[0], 50, domain[1], "DEM FAVORED", "REP FAVORED");
 
   const end = history?.end ?? 1;
   const first = Math.min(...[p[0]?.t, k[0]?.t].filter((t): t is number => t != null), end);
@@ -133,15 +147,17 @@ export function MarketLines({
       end={end}
       domain={domain}
       grid={grid}
+      bands={bands}
+      gutterLeft={38}
       mid={50}
       height={height}
-      gutterRight={endLabels ? 48 : 0}
+      gutterRight={endLabels ? 56 : 0}
       faintGrid={endLabels ? "var(--color-neutral-900)" : "var(--color-neutral-800)"}
       endLabels={
         endLabels
           ? [
-              ...(lastP != null ? [{ v: lastP, text: `${Math.round(lastP)}%`, color: "var(--color-accent-400)" }] : []),
-              ...(lastK != null ? [{ v: lastK, text: `${Math.round(lastK)}%`, color: "var(--color-kalshi)" }] : []),
+              ...(lastP != null ? [{ v: lastP, text: endText(lastP), color: "var(--color-accent-400)" }] : []),
+              ...(lastK != null ? [{ v: lastK, text: endText(lastK), color: "var(--color-kalshi)" }] : []),
             ]
           : undefined
       }

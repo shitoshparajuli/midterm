@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { Legend, MarketLines, RangePicker, useHistory, type History, type Range } from "./market-chart";
 import { Sparkline } from "./line-chart";
-import { compare, fmtPct, officeLabel, raceName } from "@/lib/format";
+import { compare, officeLabel, raceName } from "@/lib/format";
+import { BigOdds, Odds } from "./odds";
 
 type Odds = { p: number | null; k: number | null };
 export interface Tile {
@@ -49,27 +50,15 @@ export function Overview({
           ))}
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", gap: 20, flexWrap: "wrap" }}>
-          <div className="big">
-            <div className="big-label">Polymarket</div>
-            <div className="big-value c-pm">
-              {fmtPct(odds.p)}
-              <small>%</small>
-            </div>
-          </div>
-          <div className="big">
-            <div className="big-label">Kalshi</div>
-            <div className="big-value c-k">
-              {fmtPct(odds.k)}
-              <small>%</small>
-            </div>
-          </div>
+          <BigOdds p={odds.p} platform="polymarket" />
+          <BigOdds p={odds.k} platform="kalshi" />
           {cmp && (
             <div className={`tag${cmp.split ? " tag-split" : ""}`} style={{ marginBottom: 4 }}>
               {cmp.label}
             </div>
           )}
         </div>
-        <div style={{ fontSize: 13, color: "var(--color-neutral-400)" }}>Chance Democrats win control</div>
+        <div style={{ fontSize: 13, color: "var(--color-neutral-400)" }}>Chance each party wins control of the {c.label}</div>
         <div style={{ marginTop: 4 }}>
           <MarketLines history={history} range={range} height={170} endLabels label={`${c.label} control odds over time`} />
         </div>
@@ -83,7 +72,7 @@ export function Overview({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <h2 style={{ fontSize: 16, fontWeight: 500 }}>Races to watch</h2>
           <div style={{ fontSize: 12 }} className="muted">
-            Dem chance
+            Favorite&apos;s chance
           </div>
         </div>
         <div className="tiles">
@@ -99,11 +88,11 @@ export function Overview({
                 </div>
                 <Sparkline p={r.spark.polymarket} k={r.spark.kalshi} width={150} height={34} stretch />
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <div style={{ fontSize: 17, fontWeight: 500 }} className="c-pm">
-                    {fmtPct(r.p)}
+                  <div style={{ fontSize: 17 }}>
+                    <Odds p={r.p} platform="polymarket" />
                   </div>
-                  <div style={{ fontSize: 17, fontWeight: 500 }} className="c-k">
-                    {fmtPct(r.k)}
+                  <div style={{ fontSize: 17 }}>
+                    <Odds p={r.k} platform="kalshi" />
                   </div>
                   <div style={{ marginLeft: "auto", fontSize: 11, color: t.split ? "var(--color-accent-300)" : "var(--color-neutral-500)" }}>
                     {t.short}

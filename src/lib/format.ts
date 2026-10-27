@@ -54,3 +54,11 @@ export const fmtTime = (t: number) =>
   TIME_FMT.format(new Date(t * 1000)).replace(":00", "").replace(" AM", " am").replace(" PM", " pm");
 /** "2026-10-22" → "Oct 22". */
 export const fmtDay = (d: string) => DATE_FMT.format(new Date(`${d}T12:00:00-05:00`));
+
+/** P(D) 0..1 → the favourite and their chance: { party: "D", pct: 66 }. 50/50 has no favourite. */
+export function lead(p: number | null | undefined): { party: "D" | "R" | null; pct: number } | null {
+  const d = toPct(p);
+  if (d == null) return null;
+  if (d === 50) return { party: null, pct: 50 };
+  return d > 50 ? { party: "D", pct: d } : { party: "R", pct: 100 - d };
+}

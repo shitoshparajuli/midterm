@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { searchRaces } from "@/lib/search";
-import { fmtPct, officeLabel, raceName } from "@/lib/format";
+import { officeLabel, raceName } from "@/lib/format";
+import { Odds } from "./odds";
 
 interface Entry {
   key: string;
@@ -143,9 +144,9 @@ export function GlobalSearch() {
                       </div>
                     )}
                   </div>
-                  <div style={{ display: "flex", gap: 8, fontSize: 13, fontWeight: 500, flex: "none" }}>
-                    <span className="c-pm">{fmtPct(r.p)}</span>
-                    <span className="c-k">{fmtPct(r.k)}</span>
+                  <div style={{ display: "flex", gap: 8, fontSize: 13, flex: "none" }}>
+                    <Odds p={r.p} platform="polymarket" />
+                    <Odds p={r.k} platform="kalshi" />
                   </div>
                 </Link>
               ))}

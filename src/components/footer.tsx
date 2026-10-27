@@ -5,7 +5,7 @@ export function Footer() {
       <a href="https://votehub.com/polls/" style={{ textDecoration: "underline" }}>
         VoteHub
       </a>
-      . Probabilities are the chance the Democrat wins, with each market&apos;s D and R prices normalized to sum to 100%.
+      . Win chances use each market&apos;s D and R prices, normalized to sum to 100%. Compact figures like D66 show the favorite and their chance.
     </footer>
   );
 }

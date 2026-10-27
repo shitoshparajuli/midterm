@@ -267,6 +267,32 @@ a {
 .c-k {
   color: var(--color-kalshi);
 }
+.c-dem {
+  color: var(--color-dem);
+}
+.c-rep {
+  color: var(--color-rep);
+}
+.odds {
+  font-weight: 500;
+  white-space: nowrap;
+}
+.odds > span:first-child:not(:last-child) {
+  font-size: 0.78em;
+  margin-right: 1px;
+}
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.dot-polymarket {
+  background: var(--color-accent);
+}
+.dot-kalshi {
+  background: var(--color-kalshi);
+}
 
 .legend {
   display: flex;

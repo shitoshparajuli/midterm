@@ -18,7 +18,9 @@ interface Props {
   start: number;
   end: number;
   domain: [number, number];
-  grid: { v: number; label: string }[];
+  grid: { v: number; label: string; color?: string }[];
+  /** Tinted value ranges behind the lines (e.g. "Dem favored" above 50%). */
+  bands?: { from: number; to: number; color: string; label?: string; labelColor?: string; labelAt?: "top" | "bottom" }[];
   /** Value of the emphasised gridline (50% / Even). */
   mid: number;
   height?: number;
@@ -34,6 +36,17 @@ interface Props {
 
 const W = 1000;
 
+export const DEM_AXIS = "color-mix(in srgb, var(--color-dem) 75%, var(--color-bg))";
+export const REP_AXIS = "color-mix(in srgb, var(--color-rep) 75%, var(--color-bg))";
+
+/** Faint blue above `mid` and red below it, labelled at the outer edges. */
+export function partyBands(lo: number, mid: number, hi: number, demLabel: string, repLabel: string) {
+  return [
+    { from: mid, to: hi, color: "color-mix(in srgb, var(--color-dem) 7%, transparent)", label: demLabel, labelColor: DEM_AXIS, labelAt: "top" as const },
+    { from: lo, to: mid, color: "color-mix(in srgb, var(--color-rep) 7%, transparent)", label: repLabel, labelColor: REP_AXIS, labelAt: "bottom" as const },
+  ];
+}
+
 export function LineChart({
   series,
   start,
@@ -48,6 +61,7 @@ export function LineChart({
   endLabels,
   events,
   dots,
+  bands,
   xLabels,
   label,
 }: Props) {
@@ -74,6 +88,28 @@ export function LineChart({
         aria-label={label}
         style={{ position: "relative", height: H + 20, padding: `10px ${gutterRight}px 10px ${gutterLeft}px` }}
       >
+        {bands?.map((b) => (
+          <div
+            key={`${b.from}-${b.to}`}
+            style={{
+              position: "absolute",
+              left: gutterLeft,
+              right: gutterRight,
+              top: 10 + y(Math.max(b.from, b.to)),
+              height: Math.abs(y(b.from) - y(b.to)),
+              background: b.color,
+              display: "flex",
+              alignItems: b.labelAt === "bottom" ? "flex-end" : "flex-start",
+              padding: "3px 6px",
+              fontSize: 10,
+              letterSpacing: "0.04em",
+              color: b.labelColor,
+              pointerEvents: "none",
+            }}
+          >
+            {b.label}
+          </div>
+        ))}
         {grid.map((g) => (
           <div
             key={g.v}
@@ -88,7 +124,7 @@ export function LineChart({
               gap: 6,
             }}
           >
-            <div style={{ fontSize: 10, color: "var(--color-neutral-600)", width: gutterLeft - 6 }}>{g.label}</div>
+            <div style={{ fontSize: 10, color: g.color ?? "var(--color-neutral-600)", width: gutterLeft - 6, whiteSpace: "nowrap" }}>{g.label}</div>
             <div style={{ flex: 1, height: 1, background: g.v === mid ? "var(--color-neutral-700)" : faintGrid }} />
           </div>
         ))}

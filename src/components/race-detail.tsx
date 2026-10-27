@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Legend, MarketLines, RangePicker, useHistory, type History, type Range } from "./market-chart";
-import { LineChart } from "./line-chart";
-import { compare, fmtDate, fmtDay, fmtMargin, fmtPct, officeLabel, raceName } from "@/lib/format";
+import { DEM_AXIS, LineChart, partyBands, REP_AXIS } from "./line-chart";
+import { compare, fmtDate, fmtDay, fmtMargin, officeLabel, raceName } from "@/lib/format";
+import { BigOdds } from "./odds";
 import { STATES } from "@/lib/races";
 
 type Avg = { margin: number; polls: number; pollsters: number } | null;
@@ -40,10 +41,10 @@ export function RaceDetail({ data, initial }: { data: RaceDetailData; initial: H
     race.office === "house" && race.state ? `House · ${STATES[race.state] ?? race.state}` : officeLabel(race.office);
   const who =
     race.office === "control"
-      ? "Chance Democrats win control"
-      : names.D
-        ? `Chance ${names.D} (D) wins`
-        : "Chance the Democrat wins";
+      ? "Chance each party wins control"
+      : names.D && names.R
+        ? `Chance to win: ${names.D} (D) vs ${names.R} (R)`
+        : "Chance each party wins";
 
   return (
     <>
@@ -71,20 +72,8 @@ export function RaceDetail({ data, initial }: { data: RaceDetailData; initial: H
           <div className="kicker">Prediction markets</div>
           <div style={{ fontSize: 13, color: "var(--color-neutral-400)", marginTop: -4 }}>{who}</div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 20 }}>
-            <div className="big">
-              <div className="big-label">Polymarket</div>
-              <div className="big-value c-pm">
-                {fmtPct(current.polymarket)}
-                <small>%</small>
-              </div>
-            </div>
-            <div className="big">
-              <div className="big-label">Kalshi</div>
-              <div className="big-value c-k">
-                {fmtPct(current.kalshi)}
-                <small>%</small>
-              </div>
-            </div>
+            <BigOdds p={current.polymarket} platform="polymarket" />
+            <BigOdds p={current.kalshi} platform="kalshi" />
           </div>
           <MarketLines history={history} range={range} label={`${raceName(race)} market odds over time`} />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -169,7 +158,8 @@ function PollsPanel({ data }: { data: RaceDetailData }) {
             start={start}
             end={end}
             domain={[-lim, lim]}
-            grid={[half, 0, -half].map((v) => ({ v, label: fmtMargin(v) }))}
+            grid={[half, 0, -half].map((v) => ({ v, label: fmtMargin(v), color: v > 0 ? DEM_AXIS : v < 0 ? REP_AXIS : undefined }))}
+            bands={partyBands(-lim, 0, lim, "DEM AHEAD", "REP AHEAD")}
             mid={0}
             gutterLeft={34}
             xLabels={[fmtDate(start), "Now"]}

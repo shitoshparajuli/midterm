@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Chips, SearchBox } from "./search";
 import { raceMatches, tokenize } from "@/lib/search";
-import { compare, fmtMargin, fmtPct, officeLabel, raceName } from "@/lib/format";
+import { compare, fmtMargin, officeLabel, raceName } from "@/lib/format";
+import { Odds } from "./odds";
 
 export interface ListRace {
   key: string;
@@ -77,17 +78,13 @@ export function RaceList({ races, initialQuery = "" }: { races: ListRace[]; init
                 <span className="muted" style={{ fontSize: 11 }}>
                   P{" "}
                 </span>
-                <span className="c-pm" style={{ fontWeight: 500 }}>
-                  {fmtPct(r.p)}
-                </span>
+                <Odds p={r.p} platform="polymarket" />
               </span>
               <span>
                 <span className="muted" style={{ fontSize: 11 }}>
                   K{" "}
                 </span>
-                <span className="c-k" style={{ fontWeight: 500 }}>
-                  {fmtPct(r.k)}
-                </span>
+                <Odds p={r.k} platform="kalshi" />
               </span>
               {cmp && (
                 <span style={{ fontSize: 11, color: cmp.split ? "var(--color-accent-300)" : "var(--color-neutral-500)" }}>{cmp.gap} pt gap</span>

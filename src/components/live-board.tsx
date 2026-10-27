@@ -6,7 +6,8 @@ import { MarketLines, useHistory } from "./market-chart";
 import { Sparkline } from "./line-chart";
 import { Chips, SearchBox } from "./search";
 import { raceMatches, tokenize } from "@/lib/search";
-import { fmtPct, fmtTime, officeLabel, raceName, toPct } from "@/lib/format";
+import { fmtTime, officeLabel, raceName, toPct } from "@/lib/format";
+import { BigOdds, Odds } from "./odds";
 import { isNight, NIGHT_START, pollCloseAt } from "@/lib/election";
 
 type Platform = "polymarket" | "kalshi";
@@ -147,16 +148,18 @@ export function LiveBoard({ initial }: { initial: LiveData }) {
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
             <h2 style={{ fontSize: 16, fontWeight: 500 }}>{chamber === "senate" ? "Senate" : "House"} control</h2>
             <div style={{ fontSize: 12 }} className="muted">
-              Chance Dems win · {night ? "since 7 pm" : "last 24 hours"}
+              Chance each party wins · {night ? "since 7 pm" : "last 24 hours"}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 18 }}>
             {(["polymarket", "kalshi"] as const).map((p) => (
-              <div key={p} className="big">
-                <div className="big-label">{p === "polymarket" ? "Polymarket" : "Kalshi"}</div>
-                <div className={`big-value ${p === "polymarket" ? "c-pm" : "c-k"}`} style={{ fontSize: 26 }}>
-                  {fmtPct(ctl[p].now)}%<span style={{ fontSize: 13, color: "var(--color-neutral-500)" }}> {delta(ctl[p])}</span>
-                </div>
+              <div key={p} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <BigOdds p={ctl[p].now} platform={p} size={26} />
+                {delta(ctl[p]) && (
+                  <div style={{ fontSize: 12 }} className="muted">
+                    Dem {delta(ctl[p])} since polls closed
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -251,17 +254,19 @@ function LiveRow({ r, now }: { r: Row; now: number }) {
   const hasVote = r.demPct != null && r.repPct != null;
   const right = (v: number | null) => (v == null || !r.winner ? null : v > 0.5 === (r.winner === "D"));
 
-  const odds = (label: string, v0: number | null, v1: number | null, cls: string) => {
+  const odds = (label: string, v0: number | null, v1: number | null, platform: Platform) => {
     const ok = right(v0);
     return (
       <div style={{ display: "flex", alignItems: "baseline", gap: 5, fontSize: 13 }}>
         <span className="muted" style={{ fontSize: 11 }}>
           {label}
         </span>
-        {v0 != null && <span className="muted">{fmtPct(v0)} →</span>}
-        <span className={cls} style={{ fontWeight: 500 }}>
-          {fmtPct(v1)}
-        </span>
+        {v0 != null && (
+          <span className="muted">
+            <Odds p={v0} muted /> →
+          </span>
+        )}
+        <Odds p={v1} platform={platform} />
         {ok != null && <span style={{ color: ok ? OK : NO }}>{ok ? "✓" : "✗"}</span>}
       </div>
     );
@@ -295,8 +300,8 @@ function LiveRow({ r, now }: { r: Row; now: number }) {
         </div>
       )}
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        {odds("P", r.p0, r.p, "c-pm")}
-        {odds("K", r.k0, r.k, "c-k")}
+        {odds("P", r.p0, r.p, "polymarket")}
+        {odds("K", r.k0, r.k, "kalshi")}
         <div style={{ marginLeft: "auto" }}>
           <Sparkline p={r.spark.polymarket} k={r.spark.kalshi} width={72} height={22} fixed />
         </div>
