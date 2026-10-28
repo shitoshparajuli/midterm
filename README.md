@@ -9,15 +9,16 @@ Next.js on Vercel · Postgres (Neon) · data pipeline on GitHub Actions.
 ## Architecture
 
 ```
-            ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-            │  Polymarket  │  │    Kalshi    │  │   VoteHub    │
-            │ gamma + CLOB │  │  trade-api   │  │  polls API   │
-            └──────┬───────┘  └──────┬───────┘  └──────┬───────┘
-                   │  public, no API keys needed       │
+      ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+      │  Polymarket  │  │    Kalshi    │  │   VoteHub    │  │  Wikipedia   │
+      │ gamma + CLOB │  │  trade-api   │  │  polls API   │  │  pageviews   │
+      └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘
+             │          public, no API keys needed                 │
    GitHub Actions  ▼  every 15 min  (scripts/pipeline.ts)
-   ┌────────────────────────────────────────────────────────────┐
-   │ discover → prices → polls → pollsters → results            │
-   └───────────────────────────┬────────────────────────────────┘
+   ┌────────────────────────────────────────────────────────────────────────┐
+   │ discover → prices → polls → pollsters → attention → results → lock →   │
+   │ scores                                                                 │
+   └───────────────────────────┬────────────────────────────────────────────┘
                                ▼
                        Postgres (Neon)
                                │
@@ -38,6 +39,7 @@ Next.js on Vercel · Postgres (Neon) · data pipeline on GitHub Actions.
 | `prices` | Incremental **hourly** price history for each market (the first run backfills `BACKFILL_DAYS`). It stores a point only when the price moves, plus a 6-hour heartbeat. Markets under `MIN_MARKET_VOLUME` (default $10k) are skipped; their charts load live from upstream instead. |
 | `polls` | Pulls VoteHub polls (`us-senator`, `governor`, `us-representative`, `generic-ballot`), maps each one to a race, and works out the D−R margin by matching poll answers to candidate parties learned from the markets. |
 | `pollsters` | Classifies each pollster's lean (see below). |
+| `attention` | Daily Wikipedia pageviews of each race's article (the 2026 election article for Senate and Governor, the district article for House) into `pageviews`. Backfills 60 days, then adds new days at most every 6 hours. Feeds "Races to watch". |
 | `lock` | Once **Nov 2, 9pm ET** has passed, freezes every source's projection for every race into `forecasts` under lock `2026-final` (see below). Runs once; never overwrites. |
 | `scores` | Re-scores every lock against the latest results and stores the numbers in `forecast_scores`. |
 | `results` | Marks a race's winner when a "party X wins" contract settles YES. An optional `data/results.csv` overrides this and adds vote shares (needed to score poll *margins*). |
@@ -68,23 +70,38 @@ Poll averages (`src/lib/poll-average.ts`) weight polls by recency (14-day half-l
 `Φ(margin / σ)`, where σ = 6.5 pts (Senate/Gov) or 7.5 (House), roughly the historical polling
 error.
 
+### Races to watch
+
+The Overview's 12 featured races (`src/lib/watch.ts`). Eligible: Senate, Governor and House races
+priced on both platforms whose average D chance is between 12% and 88%. Each is scored as
+
+`0.45 × volume + 0.45 × attention + 0.10 × closeness`
+
+where volume is the race's percentile rank in trading volume (Polymarket dollars and Kalshi contracts
+ranked separately, then averaged), attention is its percentile rank in Wikipedia pageviews over the
+last 7 days, and closeness is `1 − 2·|avg P(D) − 0.5|`. The list is frozen into each lock
+(`forecast_locks.watch`, picked from the locked odds) and scored as its own `watch` scope. Once
+`2026-final` exists, the Overview shows the frozen list.
+
 ### Locked projections and the scorecard
 
 The headline comparison uses projections frozen at **9pm ET on Nov 2** (`FINAL_LOCK_AT` in
 `src/lib/election.ts`). The first pipeline run after that moment takes a snapshot *as of* 9pm, using
 stored price history and only polls that ended by then, so a delayed run still locks the 9pm numbers.
 
-- `forecast_locks`: one row per lock (`2026-final`)
+- `forecast_locks`: one row per lock (`2026-final`), with that moment's Races to watch (`watch`)
 - `forecasts`: one row per lock × race × source. Sources: `polymarket`, `kalshi`, `polls:all`,
   `polls:nonpartisan`, `polls:D`, `polls:R`, and `pollster:<name>` (each pollster's latest poll in the
   race, within 60 days). Stores P(D), the poll margin, and the raw inputs (`detail`).
-- `forecast_scores`: per lock × source × scope (`all`, `office:senate`, `state:TX`, ...): races
+- `forecast_scores`: per lock × source × scope (`all`, `office:senate`, `state:TX`, `watch`, ...): races
   scored, winners called (an exact 50% counts as half), Brier, log loss, average chance given to the
   winner, and for polls the margin bias / mean absolute miss. Chamber control is scored on its own.
 
 `/scorecard` shows the source leaderboard by office, calibration, a pollster leaderboard (pollsters
-with 3+ scored races are ranked first) and a state-by-state ✓/✗ table. Before the lock it previews
-today's numbers. `GET /api/scorecard?format=csv` downloads the locked projections next to the results.
+with 3+ scored races are ranked first) and a state-by-state ✓/✗ table. `/scorecard?view=watch` is the
+same leaderboard for the locked Races to watch, with each race's calls. Before the lock it previews
+today's numbers. `GET /api/scorecard?format=csv` downloads the locked projections next to the results
+(with each race's `watch_rank`).
 
 Poll *margin* scoring needs vote shares: add them to `data/results.csv` as results are certified and
 commit it. The next pipeline run picks them up and re-scores.
@@ -110,11 +127,11 @@ Built from the Claude Design handoff in `design/design_handoff_midterm_tracker/`
 
 | route | screen |
 |---|---|
-| `/` | Overview: Senate/House control odds over time, "races to watch" tiles (split calls first) |
+| `/` | Overview: Senate/House control odds over time, "races to watch" tiles (volume + online attention, see above), top markets-vs-polls disagreements |
 | `/races` | Searchable list of every race, with filters for office and split calls |
 | `/races/[key]` | Race detail: market chart (1H/1D/1W/30D/All/Nov 3) and a separate poll panel (all / left / right averages, poll dots, latest poll per pollster) |
 | `/vs-polls` | Markets vs polls: races where market odds and poll-implied odds favor different candidates or are far apart (nonpartisan or all polls) |
-| `/scorecard` | Locked Nov 2 projections vs results: leaderboard, calibration, pollsters, state by state |
+| `/scorecard` | Locked Nov 2 projections vs results: leaderboard, calibration, pollsters, state by state; `?view=watch` for the Races to watch scorecard |
 | `/live` | Election night: seat counts, control chart with race-call markers, scorecard at poll close, race rows |
 
 Polymarket is always purple and Kalshi amber. "Nov 3" unlocks at 7pm ET on election night

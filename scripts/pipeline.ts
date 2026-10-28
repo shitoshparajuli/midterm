@@ -1,6 +1,6 @@
 /**
  * Data pipeline CLI.
- *   pnpm pipeline all          # discover → prices → polls → pollsters → results → lock → scores
+ *   pnpm pipeline all          # discover → prices → polls → pollsters → attention → results → lock → scores
  *   pnpm pipeline <step> ...   # any subset, in the order given
  */
 import "dotenv/config";
@@ -10,6 +10,7 @@ import { discover } from "@/lib/pipeline/discover";
 import { ingestPrices } from "@/lib/pipeline/prices";
 import { ingestPolls } from "@/lib/pipeline/polls";
 import { computePollsters } from "@/lib/pipeline/pollsters";
+import { ingestAttention } from "@/lib/pipeline/attention";
 import { ingestResults } from "@/lib/pipeline/results";
 import { lockStep, scoresStep } from "@/lib/pipeline/lock";
 
@@ -18,6 +19,7 @@ const STEPS: Record<string, () => Promise<object>> = {
   prices: () => ingestPrices(),
   polls: () => ingestPolls(),
   pollsters: () => computePollsters(),
+  attention: () => ingestAttention(),
   results: () => ingestResults(),
   lock: () => lockStep(),
   scores: () => scoresStep(),

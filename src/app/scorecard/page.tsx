@@ -20,6 +20,6 @@ export default function ScorecardPage({ searchParams }: PageProps<"/scorecard">)
 
 async function ScorecardData({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await connection();
-  const lock = (await searchParams).lock;
-  return <ScorecardView data={await scorecard(typeof lock === "string" ? lock : FINAL_LOCK_ID)} />;
+  const { lock, view } = await searchParams;
+  return <ScorecardView data={await scorecard(typeof lock === "string" ? lock : FINAL_LOCK_ID)} view={view === "watch" ? "watch" : "all"} />;
 }

@@ -15,8 +15,10 @@ export interface Tile {
   office: string;
   state: string | null;
   title: string;
-  p: number;
-  k: number;
+  p: number | null;
+  k: number | null;
+  /** Wikipedia pageviews over the last week. */
+  views: number;
   spark: { polymarket: number[]; kalshi: number[] };
 }
 
@@ -25,14 +27,19 @@ const CHAMBERS = [
   { id: "house", label: "House", key: "CONTROL-HOUSE" },
 ] as const;
 
+const fmtViews = (n: number) => (n >= 9950 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
+
 export function Overview({
   control,
   watch,
+  locked,
   disagree,
   initial,
 }: {
   control: Record<"senate" | "house", Odds>;
   watch: Tile[];
+  /** The list is the one frozen with the final projections. */
+  locked: boolean;
   /** Biggest markets-vs-polls disagreements (nonpartisan polls). */
   disagree: Compared[];
   initial: Record<"senate" | "house", History>;
@@ -74,21 +81,30 @@ export function Overview({
       </section>
 
       <section style={{ flex: "2 1 320px", minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 500 }}>Races to watch</h2>
-          <div style={{ fontSize: 12 }} className="muted">
-            Favorite&apos;s chance
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 500 }}>Races to watch</h2>
+            <Link href="/scorecard?view=watch" style={{ fontSize: 13, color: "var(--color-accent-300)", whiteSpace: "nowrap" }}>
+              Scorecard ›
+            </Link>
+          </div>
+          <div style={{ fontSize: 12, color: "var(--color-neutral-400)", lineHeight: 1.45 }}>
+            {locked
+              ? "Picked when projections locked on Nov 2; odds are live. "
+              : "Most traded and most read about online, with a nudge toward close races. "}
+            Odds show the favorite&apos;s chance.
           </div>
         </div>
         <div className="tiles">
           {watch.map((r) => {
-            const t = compare(r.p, r.k)!;
+            const t = compare(r.p, r.k);
             return (
-              <Link key={r.key} href={`/races/${r.key}`} className={`tile${t.split ? " split" : ""}`}>
+              <Link key={r.key} href={`/races/${r.key}`} className={`tile${t?.split ? " split" : ""}`}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{raceName(r)}</div>
                   <div style={{ fontSize: 11 }} className="muted">
                     {officeLabel(r.office)}
+                    {r.views > 0 && <span title="Wikipedia pageviews, last 7 days"> · {fmtViews(r.views)} reads</span>}
                   </div>
                 </div>
                 <Sparkline p={r.spark.polymarket} k={r.spark.kalshi} width={150} height={34} stretch />
@@ -99,8 +115,8 @@ export function Overview({
                   <div style={{ fontSize: 17 }}>
                     <Odds p={r.k} platform="kalshi" />
                   </div>
-                  <div style={{ marginLeft: "auto", fontSize: 11, color: t.split ? "var(--color-accent-300)" : "var(--color-neutral-500)" }}>
-                    {t.short}
+                  <div style={{ marginLeft: "auto", fontSize: 11, color: t?.split ? "var(--color-accent-300)" : "var(--color-neutral-500)" }}>
+                    {t?.short}
                   </div>
                 </div>
               </Link>

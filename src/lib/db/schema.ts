@@ -12,6 +12,7 @@ import {
   serial,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import type { WatchPick } from "@/lib/watch";
 
 /**
  * A contest we track. Keys look like:
@@ -128,6 +129,23 @@ export const pollsters = pgTable("pollsters", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Daily Wikipedia pageviews of each race's article (see src/lib/sources/wikipedia.ts): the
+ * online-attention signal behind "Races to watch".
+ */
+export const pageviews = pgTable(
+  "pageviews",
+  {
+    raceKey: text("race_key")
+      .notNull()
+      .references(() => races.key),
+    day: date("day").notNull(),
+    article: text("article").notNull(),
+    views: integer("views").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.raceKey, t.day] })],
+);
+
 export const pipelineRuns = pgTable("pipeline_runs", {
   id: serial("id").primaryKey(),
   step: text("step").notNull(),
@@ -146,6 +164,7 @@ export const forecastLocks = pgTable("forecast_locks", {
   asOf: timestamp("as_of", { withTimezone: true }).notNull(), // the moment the projections represent
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   note: text("note"),
+  watch: jsonb("watch").$type<WatchPick[]>(), // "Races to watch" at lock time; scored as the "watch" scope
 });
 
 /**

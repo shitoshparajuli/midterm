@@ -68,22 +68,25 @@ export function score(rows: { p: number | null; margin: number | null; race: Rac
   };
 }
 
-/** Scopes a race falls into. Chamber control is scored on its own, never in "all". */
-export function scopesOf(r: RaceResult) {
+/**
+ * Scopes a race falls into. Chamber control is scored on its own, never in "all". `watch` is the
+ * lock's "Races to watch" list.
+ */
+export function scopesOf(r: RaceResult, watch?: ReadonlySet<string>) {
   if (r.office === "control") return ["office:control"];
-  return ["all", `office:${r.office}`, ...(r.state ? [`state:${r.state}`] : [])];
+  return ["all", `office:${r.office}`, ...(r.state ? [`state:${r.state}`] : []), ...(watch?.has(r.key) ? ["watch"] : [])];
 }
 
 /** Every (source, scope) score. Individual pollsters get "all" and office scopes only. */
-export function scoreAll(forecasts: ForecastRow[], races: RaceResult[]) {
+export function scoreAll(forecasts: ForecastRow[], races: RaceResult[], watch?: ReadonlySet<string>) {
   const byKey = new Map(races.map((r) => [r.key, r]));
   const groups = new Map<string, { p: number | null; margin: number | null; race: RaceResult }[]>();
   for (const f of forecasts) {
     const race = byKey.get(f.raceKey);
     if (!race) continue;
     const pollster = f.source.startsWith("pollster:");
-    for (const scope of scopesOf(race)) {
-      if (pollster && scope.startsWith("state:")) continue;
+    for (const scope of scopesOf(race, watch)) {
+      if (pollster && (scope.startsWith("state:") || scope === "watch")) continue;
       const k = `${f.source}\u0000${scope}`;
       groups.set(k, [...(groups.get(k) ?? []), { p: f.demWinProb, margin: f.margin, race }]);
     }

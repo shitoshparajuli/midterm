@@ -11,7 +11,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # Agent guide: The Spread (2026 midterm tracker)
 
 Tracks the 2026 US midterms (Senate, House, Governor, chamber control) and compares
-**Polymarket**, **Kalshi** and **polls** (split by left/right-leaning pollsters) against results.
+**Polymarket**, **Kalshi** and **polls** (split by left/right-leaning pollsters) against results,
+overall and on the featured "Races to watch".
 Live at https://midterm-three-mu.vercel.app. `README.md` covers architecture, methodology and the API
 in depth; this file is the short version plus the rules that are easy to break.
 
@@ -26,15 +27,16 @@ in depth; this file is the short version plus the rules that are easy to break.
 ## Layout
 
 ```
-src/lib/sources/      upstream clients: polymarket.ts, kalshi.ts, votehub.ts (polls)
-src/lib/pipeline/     steps: discover, prices, polls, pollsters, results, lock (lock + scores)
+src/lib/sources/      upstream clients: polymarket.ts, kalshi.ts, votehub.ts (polls), wikipedia.ts (pageviews)
+src/lib/pipeline/     steps: discover, prices, polls, pollsters, attention, results, lock (lock + scores)
 src/lib/races.ts      race keys and market-title parsing
 src/lib/queries.ts    read side used by pages and /api routes
 src/lib/forecasts.ts  locked projections: build, lock, score, scorecard data, CSV
 src/lib/scoring.ts    pure scoring (Brier, log loss, calls, calibration, poll margin error)
 src/lib/election.ts   election-night times, poll-close times, FINAL_LOCK_AT  (pure, client-safe)
-src/lib/format.ts, search.ts, series.ts, poll-average.ts, stats.ts   pure helpers
-src/app/              pages: / (Overview), /races, /races/[key], /live, /scorecard; /api/*
+src/lib/watch.ts      "Races to watch" ranking: volume + Wikipedia attention + a little closeness (pure)
+src/lib/format.ts, search.ts, series.ts, poll-average.ts, stats.ts, vs-polls.ts   pure helpers
+src/app/              pages: / (Overview), /races, /races/[key], /vs-polls, /live, /scorecard; /api/*
 src/components/       UI (client components)
 data/                 curated inputs: pollster-affiliations.json, candidate-parties.json, results.csv
 design/               Claude Design handoff (reference only, excluded from lint)
@@ -85,6 +87,8 @@ affected page in a browser at **390px and 1280px** wide.
 - Never write fake or test results to the production database. Use the local PGlite database.
 - Results come from market settlement plus `data/results.csv` (winner and vote shares). Editing
   that CSV and pushing is the supported way to add calls and vote shares; the next run re-scores.
+- Each lock stores its own Races to watch (`forecast_locks.watch`); the `watch` scorecard scope and the
+  post-lock Overview read it from there. Don't recompute it for an existing lock.
 - Never commit secrets. `.env*` is gitignored (except `.env.example`).
 
 ## Gotchas
@@ -92,6 +96,8 @@ affected page in a browser at **390px and 1280px** wide.
 - **Local PGlite is single-connection.** The client uses `max: 1` locally. Don't run `pnpm dev` and
   `pnpm pipeline` at the same time against it; interleaved statements return wrong results.
 - **Kalshi rate-limits public reads.** Discovery runs at concurrency 3 with retries; don't raise it.
+- **Wikimedia rate-limits bursts too.** The `attention` step runs 2 requests at a time and only every 6h
+  (`ATTENTION_FORCE=1` skips the 6h gate). Use the REST endpoints; the MediaWiki action API is blocked from some IPs.
 - If CSS changes don't show up in dev, stop the server and `rm -rf .next` (stale Turbopack cache).
 - GitHub Actions turns off schedules after 60 days with no commits.
-- Polls data comes from VoteHub; credit "Polls: VoteHub" wherever polls are shown.
+- Polls data comes from VoteHub; credit "Polls: VoteHub" wherever polls are shown. Attention comes from Wikipedia pageviews.

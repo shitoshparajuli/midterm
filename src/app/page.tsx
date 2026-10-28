@@ -31,6 +31,7 @@ async function OverviewData() {
     <Overview
       control={data.control}
       watch={data.watch}
+      locked={data.locked}
       disagree={splits.slice(0, 5)}
       initial={{ senate, house }}
     />

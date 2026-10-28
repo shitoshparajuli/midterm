@@ -5,7 +5,8 @@ import { demProbSeries, RANGES, type Pt, type RangeKey } from "@/lib/series";
 import { fetchPmHistory } from "@/lib/sources/polymarket";
 import { fetchKalshiHistory } from "@/lib/sources/kalshi";
 import { marginToProb } from "@/lib/stats";
-import { NIGHT_END, NIGHT_START, pollCloseAt } from "@/lib/election";
+import { FINAL_LOCK_ID, NIGHT_END, NIGHT_START, pollCloseAt } from "@/lib/election";
+import { ATTENTION_DAYS, pickWatch, type WatchInput, type WatchPick } from "@/lib/watch";
 
 type Market = typeof schema.markets.$inferSelect;
 export const PLATFORMS = ["polymarket", "kalshi"] as const;
@@ -398,10 +399,47 @@ export async function sparklines(raceKeys: string[], start: number, step: number
 
 export type RaceRow = Awaited<ReturnType<typeof listRaces>>[number];
 const volumeOf = (r: RaceRow) => (r.markets.polymarket?.volume ?? 0) + (r.markets.kalshi?.volume ?? 0);
+type Prices = Map<string, { p: number | null; k: number | null }>;
 
-/** Overview: chamber control now + "races to watch" (contested, split calls first, then by volume). */
+/** Wikipedia pageviews per race over the ATTENTION_DAYS days before `asOf`. */
+export async function recentViews(asOf = new Date()) {
+  const to = asOf.toISOString().slice(0, 10);
+  const from = new Date(asOf.getTime() - ATTENTION_DAYS * 86400_000).toISOString().slice(0, 10);
+  const rows = await db
+    .select({ raceKey: schema.pageviews.raceKey, views: sql<number>`sum(${schema.pageviews.views})::int` })
+    .from(schema.pageviews)
+    .where(and(gte(schema.pageviews.day, from), sql`${schema.pageviews.day} < ${to}`))
+    .groupBy(schema.pageviews.raceKey);
+  return new Map(rows.map((r) => [r.raceKey, r.views]));
+}
+
+/** Races with odds on both platforms, as inputs to pickWatch. `prices` overrides the live odds (a lock's). */
+function watchInputs(races: RaceRow[], views: Map<string, number>, prices?: Prices): WatchInput[] {
+  return races.flatMap((r) => {
+    if (!["senate", "governor", "house"].includes(r.office)) return [];
+    const p = prices ? prices.get(r.key)?.p : r.markets.polymarket?.demWinProb;
+    const k = prices ? prices.get(r.key)?.k : r.markets.kalshi?.demWinProb;
+    if (p == null || k == null) return [];
+    return [{ key: r.key, p, k, pmVolume: r.markets.polymarket?.volume ?? 0, kVolume: r.markets.kalshi?.volume ?? 0, views: views.get(r.key) ?? 0 }];
+  });
+}
+
+/** Races to watch now, or as of a lock (`asOf` with that moment's odds). */
+export async function racesToWatch({ asOf, prices }: { asOf?: Date; prices?: Prices } = {}): Promise<WatchPick[]> {
+  const [races, views] = await Promise.all([listRaces(), recentViews(asOf)]);
+  return pickWatch(watchInputs(races, views, prices));
+}
+
+/**
+ * Overview: chamber control now + "races to watch". Once the final lock exists, the list is the
+ * one frozen with it (so the tiles match the Scorecard and don't drop out as races are called).
+ */
 export async function overview() {
-  const races = await listRaces();
+  const [races, views, [final]] = await Promise.all([
+    listRaces(),
+    recentViews(),
+    db.select({ watch: schema.forecastLocks.watch }).from(schema.forecastLocks).where(eq(schema.forecastLocks.id, FINAL_LOCK_ID)),
+  ]);
   const control = Object.fromEntries(
     ["SENATE", "HOUSE"].map((c) => {
       const r = races.find((x) => x.key === `CONTROL-${c}`);
@@ -409,25 +447,26 @@ export async function overview() {
     }),
   ) as Record<"senate" | "house", { p: number | null; k: number | null }>;
 
-  const contested = races
-    .filter((r) => ["senate", "governor", "house"].includes(r.office))
-    .map((r) => ({ r, p: r.markets.polymarket?.demWinProb, k: r.markets.kalshi?.demWinProb }))
-    .filter((x) => x.p != null && x.k != null && (x.p + x.k) / 2 >= 0.12 && (x.p + x.k) / 2 <= 0.88)
-    .map((x) => ({ ...x, split: x.p! > 0.5 !== x.k! > 0.5 }))
-    .sort((a, b) => Number(b.split) - Number(a.split) || volumeOf(b.r) - volumeOf(a.r))
-    .slice(0, 12);
+  const picks = final?.watch ?? pickWatch(watchInputs(races, views));
+  const byKey = new Map(races.map((r) => [r.key, r]));
+  const watch = picks.flatMap((w) => {
+    const r = byKey.get(w.key);
+    return r ? [{ r, w }] : [];
+  });
 
   const start = Math.floor(Date.now() / 1000) - 30 * 86400;
-  const spark = await sparklines(contested.map((x) => x.r.key), start, 12 * 3600);
+  const spark = await sparklines(watch.map((x) => x.r.key), start, 12 * 3600);
   return {
     control,
-    watch: contested.map(({ r, p, k }) => ({
+    locked: !!final?.watch,
+    watch: watch.map(({ r, w }) => ({
       key: r.key,
       office: r.office,
       state: r.state,
       title: r.title,
-      p: p!,
-      k: k!,
+      p: r.markets.polymarket?.demWinProb ?? null,
+      k: r.markets.kalshi?.demWinProb ?? null,
+      views: views.get(r.key) ?? w.views,
       spark: spark.get(r.key) ?? { polymarket: [], kalshi: [] },
     })),
   };

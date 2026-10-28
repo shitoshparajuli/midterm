@@ -1,10 +1,10 @@
 /**
  * Locked projections: build a snapshot of every source's call for every race as of a moment,
- * freeze it, and score it against results.
+ * freeze it (with that moment's "Races to watch"), and score it against results.
  */
 import { and, eq, isNotNull, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
-import { demProb, leanMap, priceAt, primaryMarkets, PLATFORMS } from "@/lib/queries";
+import { demProb, leanMap, priceAt, primaryMarkets, racesToWatch, PLATFORMS } from "@/lib/queries";
 import { inGroup, LEAN_GROUPS, pollAverage } from "@/lib/poll-average";
 import { marginToProb } from "@/lib/stats";
 import { calibration, MAIN_SOURCES, scoreAll, type ForecastRow } from "@/lib/scoring";
@@ -93,18 +93,27 @@ export async function lockForecasts(id: string, asOf: Date, { force = false, not
   const [existing] = await db.select().from(schema.forecastLocks).where(eq(schema.forecastLocks.id, id));
   if (existing && !force) return { id, created: false, asOf: existing.asOf.toISOString() };
   const rows = await buildForecasts(asOf);
+  // Pick the watch list from the locked odds, so a late run still picks what 9pm looked like.
+  const prices = new Map<string, { p: number | null; k: number | null }>();
+  for (const r of rows) {
+    if (r.source !== "polymarket" && r.source !== "kalshi") continue;
+    const cur = prices.get(r.raceKey) ?? { p: null, k: null };
+    cur[r.source === "polymarket" ? "p" : "k"] = r.demWinProb ?? null;
+    prices.set(r.raceKey, cur);
+  }
+  const watch = await racesToWatch({ asOf, prices });
   await db.transaction(async (tx) => {
     if (existing) {
       await tx.delete(schema.forecastScores).where(eq(schema.forecastScores.lockId, id));
       await tx.delete(schema.forecasts).where(eq(schema.forecasts.lockId, id));
       await tx.delete(schema.forecastLocks).where(eq(schema.forecastLocks.id, id));
     }
-    await tx.insert(schema.forecastLocks).values({ id, asOf, note });
+    await tx.insert(schema.forecastLocks).values({ id, asOf, note, watch });
     for (let i = 0; i < rows.length; i += 1000) {
       await tx.insert(schema.forecasts).values(rows.slice(i, i + 1000).map((r) => ({ ...r, lockId: id })));
     }
   });
-  return { id, created: true, asOf: asOf.toISOString(), forecasts: rows.length };
+  return { id, created: true, asOf: asOf.toISOString(), forecasts: rows.length, watch: watch.map((w) => w.key) };
 }
 
 export async function loadForecasts(lockId: string) {
@@ -121,8 +130,12 @@ export async function loadForecasts(lockId: string) {
 
 /** Recompute and store scores for a lock against current results. */
 export async function storeScores(lockId: string) {
-  const [forecasts, races] = await Promise.all([loadForecasts(lockId), db.select().from(schema.races)]);
-  const scores = scoreAll(forecasts, races);
+  const [forecasts, races, [lock]] = await Promise.all([
+    loadForecasts(lockId),
+    db.select().from(schema.races),
+    db.select({ watch: schema.forecastLocks.watch }).from(schema.forecastLocks).where(eq(schema.forecastLocks.id, lockId)),
+  ]);
+  const scores = scoreAll(forecasts, races, new Set(lock?.watch?.map((w) => w.key)));
   await db.transaction(async (tx) => {
     await tx.delete(schema.forecastScores).where(eq(schema.forecastScores.lockId, lockId));
     for (let i = 0; i < scores.length; i += 1000) {
@@ -132,7 +145,7 @@ export async function storeScores(lockId: string) {
   return { lockId, scores: scores.length, scored: scores.find((s) => s.source === "polymarket" && s.scope === "all")?.n ?? 0 };
 }
 
-const MAIN_SCOPES = ["all", "office:senate", "office:governor", "office:house", "office:control"] as const;
+const MAIN_SCOPES = ["all", "office:senate", "office:governor", "office:house", "office:control", "watch"] as const;
 
 /**
  * Everything the Scorecard page needs. Uses the final lock once it exists; before that, a live
@@ -141,12 +154,13 @@ const MAIN_SCOPES = ["all", "office:senate", "office:governor", "office:house", 
 export async function scorecard(lockId: string = FINAL_LOCK_ID) {
   const [lock] = await db.select().from(schema.forecastLocks).where(eq(schema.forecastLocks.id, lockId));
   const now = new Date();
-  const [forecasts, races, leanOf] = await Promise.all([
+  const [forecasts, races, leanOf, watch] = await Promise.all([
     lock ? loadForecasts(lockId) : buildForecasts(now),
     db.select().from(schema.races).where(sql`${schema.races.office} <> 'generic'`),
     leanMap(),
+    lock ? (lock.watch ?? []) : racesToWatch(),
   ]);
-  const scores = scoreAll(forecasts as ForecastRow[], races);
+  const scores = scoreAll(forecasts as ForecastRow[], races, new Set(watch.map((w) => w.key)));
   const get = (source: string, scope: string) => scores.find((s) => s.source === source && s.scope === scope) ?? null;
 
   const byRace = new Map<string, Record<string, { p: number | null; margin: number | null }>>();
@@ -187,6 +201,8 @@ export async function scorecard(lockId: string = FINAL_LOCK_ID) {
     calibration: { polymarket: calib("polymarket"), kalshi: calib("kalshi"), "polls:all": calib("polls:all") },
     pollsters,
     races: rows,
+    /** "Races to watch" in rank order: frozen with the lock, or today's pick in a preview. */
+    watch,
   };
 }
 
@@ -194,13 +210,16 @@ export type Scorecard = Awaited<ReturnType<typeof scorecard>>;
 
 /** Flat CSV of a lock: one row per race and source, with the result alongside. */
 export async function lockCsv(lockId: string) {
+  const [lock] = await db.select({ watch: schema.forecastLocks.watch }).from(schema.forecastLocks).where(eq(schema.forecastLocks.id, lockId));
+  const watchRank = new Map(lock?.watch?.map((w) => [w.key, w.rank]));
   const rows = await db.execute<Record<string, string | number | null>>(sql`
     select f.lock_id, l.as_of, f.race_key, r.office, r.state, f.source, f.dem_win_prob, f.margin,
       r.winner_party, r.dem_pct, r.rep_pct, r.called_at, r.result_source
     from forecasts f join forecast_locks l on l.id = f.lock_id join races r on r.key = f.race_key
     where f.lock_id = ${lockId}
     order by f.race_key, f.source`);
-  const cols = ["lock_id", "as_of", "race_key", "office", "state", "source", "dem_win_prob", "margin", "winner_party", "dem_pct", "rep_pct", "called_at", "result_source"];
+  for (const r of rows) r.watch_rank = watchRank.get(String(r.race_key)) ?? null;
+  const cols = ["lock_id", "as_of", "race_key", "office", "state", "watch_rank", "source", "dem_win_prob", "margin", "winner_party", "dem_pct", "rep_pct", "called_at", "result_source"];
   const cell = (v: unknown) => {
     const s = v == null ? "" : v instanceof Date ? v.toISOString() : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;

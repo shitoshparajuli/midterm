@@ -5,7 +5,7 @@ export function Footer() {
       <a href="https://votehub.com/polls/" style={{ textDecoration: "underline" }}>
         VoteHub
       </a>
-      . Win chances use each market&apos;s D and R prices, normalized to sum to 100%. Compact figures like D66 show the favorite and their chance.
+      . Attention: Wikipedia pageviews. Win chances use each market&apos;s D and R prices, normalized to sum to 100%. Compact figures like D66 show the favorite and their chance.
     </footer>
   );
 }

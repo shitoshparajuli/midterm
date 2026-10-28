@@ -9,6 +9,7 @@ import { STATES } from "@/lib/races";
 import { callCredit, sourceLabel, type Score } from "@/lib/scoring";
 import type { Scorecard } from "@/lib/forecasts";
 
+export type View = "all" | "watch";
 type Office = "all" | "senate" | "governor" | "house" | "control";
 const OFFICES: { id: Office; label: string }[] = [
   { id: "all", label: "All races" },
@@ -47,7 +48,15 @@ const Mark = ({ v }: { v: number | null }) =>
     <span style={{ color: v === 1 ? "var(--color-neutral-100)" : "var(--color-neutral-500)" }}>{v === 1 ? "✓" : v === 0 ? "✗" : "½"}</span>
   );
 
-export function ScorecardView({ data }: { data: Scorecard }) {
+export function ScorecardView({ data, view: initialView }: { data: Scorecard; view: View }) {
+  const [view, setViewState] = useState<View>(initialView);
+  const setView = (v: View) => {
+    setViewState(v);
+    const url = new URL(window.location.href);
+    if (v === "watch") url.searchParams.set("view", "watch");
+    else url.searchParams.delete("view");
+    window.history.replaceState(null, "", url);
+  };
   const [office, setOffice] = useState<Office>("all");
   const scope = office === "all" ? "all" : `office:${office}`;
   const { lock, counts } = data;
@@ -80,30 +89,94 @@ export function ScorecardView({ data }: { data: Scorecard }) {
         </div>
       </div>
 
-      <Chips options={OFFICES.map((o) => ({ ...o, count: data.races.filter((r) => (o.id === "all" ? r.office !== "control" : r.office === o.id)).length }))} value={office} onChange={setOffice} />
+      <div className="seg seg-tabs" role="group" aria-label="Which races" style={{ maxWidth: 420, flex: "none" }}>
+        {(
+          [
+            ["all", "Every race"],
+            ["watch", "Races to watch"],
+          ] as const
+        ).map(([id, label]) => (
+          <button key={id} type="button" className="seg-item" aria-pressed={view === id} onClick={() => setView(id)}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === "watch" ? (
+        <Watch data={data} />
+      ) : (
+        <>
+          <Chips options={OFFICES.map((o) => ({ ...o, count: data.races.filter((r) => (o.id === "all" ? r.office !== "control" : r.office === o.id)).length }))} value={office} onChange={setOffice} />
+
+          <section style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div className="kicker">Who called it best</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
+              {SOURCES.map((s) => (
+                <SourceCard key={s.id} label={sourceLabel(s.id)} color={s.color} score={data.summary[s.id]?.[scope] ?? null} projected={projected(s.id)} poll={s.id.startsWith("polls:")} />
+              ))}
+            </div>
+            <div style={{ fontSize: 12, lineHeight: 1.5, color: "var(--color-neutral-500)", maxWidth: 760 }}>
+              <b style={{ fontWeight: 500 }}>Called right</b>: the winner was above 50%. <b style={{ fontWeight: 500 }}>Avg on winner</b>: the chance it gave the
+              eventual winner, on average (higher is better). <b style={{ fontWeight: 500 }}>Brier</b>: squared error of the probabilities, 0 is perfect and a
+              coin flip scores 0.25. <b style={{ fontWeight: 500 }}>Poll error</b>: projected minus actual D−R margin; positive means the polls overstated
+              Democrats. Polls turn margins into win chances using typical polling error (±6.5 pts statewide, ±7.5 House).
+            </div>
+          </section>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
+            <Calibration data={data} />
+            <Pollsters data={data} />
+          </div>
+
+          <States data={data} office={office} />
+        </>
+      )}
+    </div>
+  );
+}
+
+/** The scorecard restricted to the lock's "Races to watch", plus each of those races. */
+function Watch({ data }: { data: Scorecard }) {
+  const byKey = new Map(data.races.map((r) => [r.key, r]));
+  const races = data.watch.flatMap((w) => {
+    const r = byKey.get(w.key);
+    return r ? [{ r, w }] : [];
+  });
+  const done = races.filter(({ r }) => decided(r)).length;
+  return (
+    <>
+      <div style={{ fontSize: 14, color: "var(--color-neutral-300)", maxWidth: 720, lineHeight: 1.5 }}>
+        The {races.length} races the Overview featured {data.lock.preview ? "right now" : "when projections locked"}: the most traded on Polymarket and
+        Kalshi and the most read about on Wikipedia, with a small nudge toward close races.{" "}
+        {data.lock.preview ? "The list freezes along with the projections." : `${done} of ${races.length} decided.`}
+      </div>
 
       <section style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <div className="kicker">Who called it best</div>
+        <div className="kicker">Who called the big races best</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
           {SOURCES.map((s) => (
-            <SourceCard key={s.id} label={sourceLabel(s.id)} color={s.color} score={data.summary[s.id]?.[scope] ?? null} projected={projected(s.id)} poll={s.id.startsWith("polls:")} />
+            <SourceCard
+              key={s.id}
+              label={sourceLabel(s.id)}
+              color={s.color}
+              score={data.summary[s.id]?.watch ?? null}
+              projected={races.filter(({ r }) => r.f[s.id]?.p != null).length}
+              poll={s.id.startsWith("polls:")}
+            />
           ))}
-        </div>
-        <div style={{ fontSize: 12, lineHeight: 1.5, color: "var(--color-neutral-500)", maxWidth: 760 }}>
-          <b style={{ fontWeight: 500 }}>Called right</b>: the winner was above 50%. <b style={{ fontWeight: 500 }}>Avg on winner</b>: the chance it gave the
-          eventual winner, on average (higher is better). <b style={{ fontWeight: 500 }}>Brier</b>: squared error of the probabilities, 0 is perfect and a
-          coin flip scores 0.25. <b style={{ fontWeight: 500 }}>Poll error</b>: projected minus actual D−R margin; positive means the polls overstated
-          Democrats. Polls turn margins into win chances using typical polling error (±6.5 pts statewide, ±7.5 House).
         </div>
       </section>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
-        <Calibration data={data} />
-        <Pollsters data={data} />
-      </div>
-
-      <States data={data} office={office} />
-    </div>
+      <section style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div className="kicker">The races</div>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {races.map(({ r, w }) => (
+            <RaceLine key={r.key} r={r} rank={w.rank} />
+          ))}
+          {!races.length && <div className="empty">No races to watch yet.</div>}
+        </div>
+      </section>
+    </>
   );
 }
 
@@ -314,12 +387,17 @@ function States({ data, office }: { data: Scorecard; office: Office }) {
   );
 }
 
-function RaceLine({ r }: { r: Race }) {
+function RaceLine({ r, rank }: { r: Race; rank?: number }) {
   const actual = r.demPct != null && r.repPct != null ? r.demPct - r.repPct : null;
   return (
-    <Link href={`/races/${r.key}`} className="row" style={{ padding: "10px 0 10px 12px" }}>
+    <Link href={`/races/${r.key}`} className="row" style={{ padding: rank ? "10px 0" : "10px 0 10px 12px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, flex: 1, minWidth: 0 }}>
+          {rank != null && (
+            <span className="muted" style={{ fontSize: 12, width: 18, flex: "none" }}>
+              {rank}
+            </span>
+          )}
           <span className="row-name" style={{ fontSize: 14 }}>
             {raceName(r)}
           </span>

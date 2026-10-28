@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       steps:
-        description: "steps to run (discover prices polls pollsters results | all)"
+        description: "steps to run (discover prices polls pollsters attention results lock scores | all)"
         default: "all"
 
 concurrency:
