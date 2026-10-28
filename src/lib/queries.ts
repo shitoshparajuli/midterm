@@ -449,24 +449,20 @@ export async function overview() {
 
   const picks = final?.watch ?? pickWatch(watchInputs(races, views));
   const byKey = new Map(races.map((r) => [r.key, r]));
-  const watch = picks.flatMap((w) => {
-    const r = byKey.get(w.key);
-    return r ? [{ r, w }] : [];
-  });
+  const watch = picks.flatMap((w) => byKey.get(w.key) ?? []);
 
   const start = Math.floor(Date.now() / 1000) - 30 * 86400;
-  const spark = await sparklines(watch.map((x) => x.r.key), start, 12 * 3600);
+  const spark = await sparklines(watch.map((r) => r.key), start, 12 * 3600);
   return {
     control,
     locked: !!final?.watch,
-    watch: watch.map(({ r, w }) => ({
+    watch: watch.map((r) => ({
       key: r.key,
       office: r.office,
       state: r.state,
       title: r.title,
       p: r.markets.polymarket?.demWinProb ?? null,
       k: r.markets.kalshi?.demWinProb ?? null,
-      views: views.get(r.key) ?? w.views,
       spark: spark.get(r.key) ?? { polymarket: [], kalshi: [] },
     })),
   };

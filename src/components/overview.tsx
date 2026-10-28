@@ -17,8 +17,6 @@ export interface Tile {
   title: string;
   p: number | null;
   k: number | null;
-  /** Wikipedia pageviews over the last week. */
-  views: number;
   spark: { polymarket: number[]; kalshi: number[] };
 }
 
@@ -26,8 +24,6 @@ const CHAMBERS = [
   { id: "senate", label: "Senate", key: "CONTROL-SENATE" },
   { id: "house", label: "House", key: "CONTROL-HOUSE" },
 ] as const;
-
-const fmtViews = (n: number) => (n >= 9950 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
 
 export function Overview({
   control,
@@ -104,7 +100,6 @@ export function Overview({
                   <div style={{ fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{raceName(r)}</div>
                   <div style={{ fontSize: 11 }} className="muted">
                     {officeLabel(r.office)}
-                    {r.views > 0 && <span title="Wikipedia pageviews, last 7 days"> · {fmtViews(r.views)} reads</span>}
                   </div>
                 </div>
                 <Sparkline p={r.spark.polymarket} k={r.spark.kalshi} width={150} height={34} stretch />
