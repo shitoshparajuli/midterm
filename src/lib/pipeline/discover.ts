@@ -99,7 +99,8 @@ export function pmMarketsFromEvents(events: PmEvent[], overrides = new Map<strin
 // ---------------------------------------------------------------- Kalshi
 
 const RACE_TAGS = new Set(["Senate", "House", "Governor"]);
-const CONTROL_SERIES = new Set(["CONTROLH", "CONTROLS"]);
+/** Matched by ticker, not title: Kalshi rewords these titles ("Who will control the Senate?"). */
+const CONTROL_SERIES: Record<string, "SENATE" | "HOUSE"> = { CONTROLS: "SENATE", CONTROLH: "HOUSE" };
 
 function kalshiSuffixParty(ticker: string): Party | null {
   const suf = ticker.split("-").pop()!.toUpperCase();
@@ -119,7 +120,8 @@ export function kalshiMarketsFromEvents(events: KEvent[], overrides = new Map<st
 
   for (const e of events) {
     if (!/-(26|2026)$/.test(e.event_ticker)) continue;
-    const race = parseRaceTitle(e.title);
+    const chamber = CONTROL_SERIES[e.series_ticker];
+    const race = chamber ? raceRef("control", chamber) : parseRaceTitle(e.title);
     if (!race) {
       unmatched.push(`${e.event_ticker}: ${e.title}`);
       continue;
@@ -175,7 +177,7 @@ export async function discover({ log = console.log } = {}) {
   // Kalshi (rate limit is ~20 req/s on the public tier; stay well under it)
   const series = (await fetchKalshiElectionSeries()).filter((s) => {
     const tags = s.tags ?? [];
-    return CONTROL_SERIES.has(s.ticker) || (tags.some((t) => RACE_TAGS.has(t)) && !tags.includes("Primaries"));
+    return !!CONTROL_SERIES[s.ticker] ||(tags.some((t) => RACE_TAGS.has(t)) && !tags.includes("Primaries"));
   });
   const limit = pLimit(3);
   const errors: string[] = [];
