@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Chips, SearchBox } from "./search";
 import { Odds } from "./odds";
 import { WinnerTag } from "./winner";
+import { Dumbbell } from "./vs-polls-row";
 import { fmtMargin, officeLabel, raceName } from "@/lib/format";
 import { STATES } from "@/lib/races";
 import { callCredit, sourceLabel, type Score } from "@/lib/scoring";
@@ -37,7 +38,8 @@ const LOCK_FMT = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeri
 const fmtLock = (iso: string) => LOCK_FMT.format(new Date(iso)).replace(":00", "").replace(" PM", " pm").replace(" AM", " am") + " ET";
 
 type Race = Scorecard["races"][number];
-const decided = (r: Race) => r.winner === "D" || r.winner === "R";
+type VsRow = Scorecard["vsPolls"][number];
+const decided = (r: { winner: string | null }) => r.winner === "D" || r.winner === "R";
 /** ✓ / ✗ / null (no projection or no result yet). */
 const verdict = (r: Race, source: string): number | null => {
   const p = r.f[source]?.p;
@@ -177,7 +179,90 @@ function Watch({ data }: { data: Scorecard }) {
           {!races.length && <div className="empty">No races to watch yet.</div>}
         </div>
       </section>
+
+      <VsPolls data={data} />
     </>
+  );
+}
+
+/** The races where markets and polls disagreed most when projections locked, and which side the result backed. */
+function VsPolls({ data }: { data: Scorecard }) {
+  const rows = data.vsPolls;
+  const done = rows.filter(decided);
+  const right = (p: (r: VsRow) => number) => {
+    const v = done.reduce((a, r) => a + callCredit(p(r), r.winner === "D"), 0);
+    return `${Number.isInteger(v) ? v : v.toFixed(1)}/${done.length}`;
+  };
+  return (
+    <section style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div className="kicker">Where markets and polls disagreed</div>
+      <div style={{ fontSize: 13, color: "var(--color-neutral-400)", lineHeight: 1.45, maxWidth: 720 }}>
+        The {rows.length} races where market odds and the nonpartisan poll average were furthest apart
+        {data.lock.preview ? " right now" : " when projections locked"}, ranked as on{" "}
+        <Link href="/vs-polls" style={{ color: "var(--color-accent-300)" }}>
+          Markets vs polls
+        </Link>
+        .{" "}
+        {done.length ? (
+          <>
+            Markets called <b style={{ fontWeight: 500, color: "var(--color-neutral-100)" }}>{right((r) => r.markets.avg)}</b>, polls{" "}
+            <b style={{ fontWeight: 500, color: "var(--color-neutral-100)" }}>{right((r) => r.pollP)}</b>.
+          </>
+        ) : (
+          "Fills in as races are called."
+        )}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {rows.map((r) => (
+          <VsLine key={r.key} r={r} />
+        ))}
+        {!rows.length && <div className="empty">No races with both market odds and nonpartisan polls.</div>}
+      </div>
+    </section>
+  );
+}
+
+function VsLine({ r }: { r: VsRow }) {
+  const mark = (p: number) => (decided(r) ? callCredit(p, r.winner === "D") : null);
+  const gap = r.split ? "Different favorite" : `${Math.round(Math.abs(r.gap) * 100)} pt gap`;
+  return (
+    <Link href={`/races/${r.key}`} className="row" style={{ padding: "10px 0" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6, flex: 1, minWidth: 0 }}>
+          <span className="row-name" style={{ fontSize: 14 }}>
+            {raceName(r)}
+          </span>
+          <span className="muted" style={{ fontSize: 11 }}>
+            {officeLabel(r.office)}
+          </span>
+        </div>
+        {r.winner ? <WinnerTag winner={r.winner} demPct={r.demPct} repPct={r.repPct} /> : <span className={`tag${r.split ? " tag-split" : ""}`}>{gap}</span>}
+      </div>
+      <Dumbbell r={r} />
+      <div style={{ display: "flex", alignItems: "baseline", gap: 14, fontSize: 13, flexWrap: "wrap" }}>
+        <span style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+          <span className="muted" style={{ fontSize: 11 }}>
+            Markets
+          </span>
+          <Odds p={r.markets.polymarket} platform="polymarket" />
+          <Odds p={r.markets.kalshi} platform="kalshi" />
+          <Mark v={mark(r.markets.avg)} />
+        </span>
+        <span style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+          <span className="muted" style={{ fontSize: 11 }}>
+            Polls
+          </span>
+          <span style={{ fontWeight: 500 }}>{fmtMargin(r.poll.margin)}</span>
+          <span className="muted">→</span>
+          <Odds p={r.pollP} />
+          <Mark v={mark(r.pollP)} />
+        </span>
+        <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--color-neutral-500)" }}>
+          {r.winner ? `${gap} · ` : ""}
+          {r.poll.polls} poll{r.poll.polls === 1 ? "" : "s"}
+        </span>
+      </div>
+    </Link>
   );
 }
 

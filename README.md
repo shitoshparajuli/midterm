@@ -99,7 +99,9 @@ stored price history and only polls that ended by then, so a delayed run still l
 
 `/scorecard` opens on the source leaderboard for the locked Races to watch, with each race's calls.
 `/scorecard?view=all` covers every race: the leaderboard by office, calibration, a pollster leaderboard
-(pollsters with 3+ scored races are ranked first) and a state-by-state ✓/✗ table. Before the lock it previews
+(pollsters with 3+ scored races are ranked first) and a state-by-state ✓/✗ table. Under the Races to watch it
+also lists the 10 races where the locked market odds and the nonpartisan poll average disagreed most (ranked as on
+`/vs-polls`), marking which side the result backed. Before the lock it previews
 today's numbers. `GET /api/scorecard?format=csv` downloads the locked projections next to the results
 (with each race's `watch_rank`).
 

@@ -7,7 +7,7 @@ import type { Compared } from "@/lib/vs-polls";
  * One race on a Rep ← 50% → Dem track: polls (white ring) joined to the markets (Polymarket purple,
  * Kalshi amber). The longer the line, the bigger the disagreement.
  */
-export function Dumbbell({ r }: { r: Compared }) {
+export function Dumbbell({ r }: { r: Pick<Compared, "pollP" | "markets" | "split"> }) {
   const x = (p: number) => `${Math.min(99, Math.max(1, p * 100))}%`;
   const lo = Math.min(r.pollP, r.markets.avg);
   const hi = Math.max(r.pollP, r.markets.avg);

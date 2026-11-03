@@ -9,6 +9,7 @@ import { inGroup, LEAN_GROUPS, pollAverage } from "@/lib/poll-average";
 import { marginToProb } from "@/lib/stats";
 import { calibration, MAIN_SOURCES, scoreAll, type ForecastRow } from "@/lib/scoring";
 import { FINAL_LOCK_AT, FINAL_LOCK_ID } from "@/lib/election";
+import { byDisagreement, compareRace } from "@/lib/vs-polls";
 
 type NewForecast = typeof schema.forecasts.$inferInsert;
 /** A pollster's latest poll counts toward its record if it ended within this window before the lock. */
@@ -123,6 +124,7 @@ export async function loadForecasts(lockId: string) {
       source: schema.forecasts.source,
       demWinProb: schema.forecasts.demWinProb,
       margin: schema.forecasts.margin,
+      detail: schema.forecasts.detail,
     })
     .from(schema.forecasts)
     .where(eq(schema.forecasts.lockId, lockId));
@@ -186,6 +188,25 @@ export async function scorecard(lockId: string = FINAL_LOCK_ID) {
     })
     .filter((r) => r.office !== "generic");
 
+  // Where markets and nonpartisan polls disagreed most, ranked as on the Markets vs polls page.
+  const pollAvg = new Map<string, { margin: number; p: number | null; polls: number; pollsters: number }>();
+  for (const f of forecasts) {
+    if ((f.source !== "polls:all" && f.source !== "polls:nonpartisan") || f.margin == null) continue;
+    const d = f.detail as { polls?: number; pollsters?: number };
+    pollAvg.set(`${f.raceKey} ${f.source}`, { margin: f.margin, p: f.demWinProb ?? null, polls: d.polls ?? 1, pollsters: d.pollsters ?? 1 });
+  }
+  const vsPolls = rows
+    .flatMap(({ f, ...r }) => {
+      const both = [f.polymarket?.p, f.kalshi?.p].filter((x): x is number => x != null);
+      const all = pollAvg.get(`${r.key} polls:all`);
+      if (r.office === "control" || !all || !both.length) return [];
+      const markets = { polymarket: f.polymarket?.p ?? null, kalshi: f.kalshi?.p ?? null, avg: both.reduce((a, b) => a + b, 0) / both.length };
+      return [compareRace({ ...r, markets, polls: { all, nonpartisan: pollAvg.get(`${r.key} polls:nonpartisan`) ?? null } }, "nonpartisan")];
+    })
+    .filter((r) => !r.fallback)
+    .sort(byDisagreement)
+    .slice(0, 10);
+
   const calib = (source: string) =>
     calibration(forecasts.filter((f) => f.source === source).map((f) => ({ p: f.demWinProb ?? null, race: raceByKey.get(f.raceKey)! })).filter((x) => x.race));
 
@@ -203,6 +224,8 @@ export async function scorecard(lockId: string = FINAL_LOCK_ID) {
     races: rows,
     /** "Races to watch" in rank order: frozen with the lock, or today's pick in a preview. */
     watch,
+    /** Top 10 market-vs-poll disagreements in the projections. */
+    vsPolls,
   };
 }
 
