@@ -8,6 +8,7 @@ import { Chips, SearchBox } from "./search";
 import { raceMatches, tokenize } from "@/lib/search";
 import { fmtTime, officeLabel, raceName, toPct } from "@/lib/format";
 import { BigOdds, Odds } from "./odds";
+import { WinnerTag } from "./winner";
 import { isNight, NIGHT_START, pollCloseAt } from "@/lib/election";
 
 type Platform = "polymarket" | "kalshi";
@@ -247,7 +248,7 @@ export function LiveBoard({ initial }: { initial: LiveData }) {
 function LiveRow({ r, now }: { r: Row; now: number }) {
   const close = pollCloseAt(r.state);
   const status = r.winner
-    ? { text: `Called · ${r.winner}`, cls: "tag" }
+    ? null
     : now < close
       ? { text: `Polls close ${fmtTime(close / 1000)}`, cls: "tag tag-pending" }
       : { text: "Counting", cls: "tag tag-pending" };
@@ -281,7 +282,7 @@ function LiveRow({ r, now }: { r: Row; now: number }) {
             {officeLabel(r.office)}
           </div>
         </div>
-        <div className={status.cls}>{status.text}</div>
+        {status ? <div className={status.cls}>{status.text}</div> : <WinnerTag winner={r.winner!} demPct={r.demPct} repPct={r.repPct} />}
       </div>
       {(hasVote || now >= close) && (
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

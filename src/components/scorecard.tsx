@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Chips, SearchBox } from "./search";
 import { Odds } from "./odds";
+import { WinnerTag } from "./winner";
 import { fmtMargin, officeLabel, raceName } from "@/lib/format";
 import { STATES } from "@/lib/races";
 import { callCredit, sourceLabel, type Score } from "@/lib/scoring";
@@ -53,7 +54,7 @@ export function ScorecardView({ data, view: initialView }: { data: Scorecard; vi
   const setView = (v: View) => {
     setViewState(v);
     const url = new URL(window.location.href);
-    if (v === "watch") url.searchParams.set("view", "watch");
+    if (v === "all") url.searchParams.set("view", "all");
     else url.searchParams.delete("view");
     window.history.replaceState(null, "", url);
   };
@@ -92,8 +93,8 @@ export function ScorecardView({ data, view: initialView }: { data: Scorecard; vi
       <div className="seg seg-tabs" role="group" aria-label="Which races" style={{ maxWidth: 420, flex: "none" }}>
         {(
           [
-            ["all", "Every race"],
             ["watch", "Races to watch"],
+            ["all", "Every race"],
           ] as const
         ).map(([id, label]) => (
           <button key={id} type="button" className="seg-item" aria-pressed={view === id} onClick={() => setView(id)}>
@@ -388,7 +389,6 @@ function States({ data, office }: { data: Scorecard; office: Office }) {
 }
 
 function RaceLine({ r, rank }: { r: Race; rank?: number }) {
-  const actual = r.demPct != null && r.repPct != null ? r.demPct - r.repPct : null;
   return (
     <Link href={`/races/${r.key}`} className="row" style={{ padding: rank ? "10px 0" : "10px 0 10px 12px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -405,10 +405,8 @@ function RaceLine({ r, rank }: { r: Race; rank?: number }) {
             {officeLabel(r.office)}
           </span>
         </div>
-        {decided(r) ? (
-          <span className="tag">{actual != null ? `Won · ${fmtMargin(actual)}` : `Won · ${r.winner}`}</span>
-        ) : r.winner ? (
-          <span className="tag">Won · {r.winner}</span>
+        {r.winner ? (
+          <WinnerTag winner={r.winner} demPct={r.demPct} repPct={r.repPct} />
         ) : (
           <span className="tag tag-pending">Pending</span>
         )}

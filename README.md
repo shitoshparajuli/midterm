@@ -97,9 +97,9 @@ stored price history and only polls that ended by then, so a delayed run still l
   scored, winners called (an exact 50% counts as half), Brier, log loss, average chance given to the
   winner, and for polls the margin bias / mean absolute miss. Chamber control is scored on its own.
 
-`/scorecard` shows the source leaderboard by office, calibration, a pollster leaderboard (pollsters
-with 3+ scored races are ranked first) and a state-by-state ✓/✗ table. `/scorecard?view=watch` is the
-same leaderboard for the locked Races to watch, with each race's calls. Before the lock it previews
+`/scorecard` opens on the source leaderboard for the locked Races to watch, with each race's calls.
+`/scorecard?view=all` covers every race: the leaderboard by office, calibration, a pollster leaderboard
+(pollsters with 3+ scored races are ranked first) and a state-by-state ✓/✗ table. Before the lock it previews
 today's numbers. `GET /api/scorecard?format=csv` downloads the locked projections next to the results
 (with each race's `watch_rank`).
 
@@ -131,7 +131,7 @@ Built from the Claude Design handoff in `design/design_handoff_midterm_tracker/`
 | `/races` | Searchable list of every race, with filters for office and split calls |
 | `/races/[key]` | Race detail: market chart (1H/1D/1W/30D/All/Nov 3) and a separate poll panel (all / left / right averages, poll dots, latest poll per pollster) |
 | `/vs-polls` | Markets vs polls: races where market odds and poll-implied odds favor different candidates or are far apart (nonpartisan or all polls) |
-| `/scorecard` | Locked Nov 2 projections vs results: leaderboard, calibration, pollsters, state by state; `?view=watch` for the Races to watch scorecard |
+| `/scorecard` | Locked Nov 2 projections vs results for the Races to watch; `?view=all` for every race: leaderboard, calibration, pollsters, state by state |
 | `/live` | Election night: seat counts, control chart with race-call markers, scorecard at poll close, race rows |
 
 Polymarket is always purple and Kalshi amber. "Nov 3" unlocks at 7pm ET on election night

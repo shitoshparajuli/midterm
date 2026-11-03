@@ -234,6 +234,20 @@ a {
   background: var(--color-accent-900);
   color: var(--color-accent-300);
 }
+.tag-win {
+  color: var(--color-bg);
+  font-weight: 500;
+}
+.winner-banner {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 10px 12px;
+  border-left: 3px solid;
+  border-radius: 6px;
+  font-size: 16px;
+}
 .panel {
   background: var(--color-surface);
   border-radius: var(--radius-md);

@@ -6,6 +6,7 @@ import { Chips, SearchBox } from "./search";
 import { raceMatches, tokenize } from "@/lib/search";
 import { compare, fmtMargin, officeLabel, raceName } from "@/lib/format";
 import { Odds } from "./odds";
+import { WinnerTag } from "./winner";
 
 export interface ListRace {
   key: string;
@@ -17,6 +18,8 @@ export interface ListRace {
   k: number | null;
   pollMargin: number | null;
   winner: string | null;
+  demPct: number | null;
+  repPct: number | null;
 }
 
 type Filter = "all" | "senate" | "governor" | "house" | "split";
@@ -71,7 +74,7 @@ export function RaceList({ races, initialQuery = "" }: { races: ListRace[]; init
                 </div>
               </div>
               {r.winner ? (
-                <div className="tag">Called · {r.winner}</div>
+                <WinnerTag winner={r.winner} demPct={r.demPct} repPct={r.repPct} />
               ) : cmp?.split ? (
                 <div className="tag tag-split">Split call</div>
               ) : null}

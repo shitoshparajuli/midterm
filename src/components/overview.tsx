@@ -80,7 +80,7 @@ export function Overview({
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
             <h2 style={{ fontSize: 16, fontWeight: 500 }}>Races to watch</h2>
-            <Link href="/scorecard?view=watch" style={{ fontSize: 13, color: "var(--color-accent-300)", whiteSpace: "nowrap" }}>
+            <Link href="/scorecard" style={{ fontSize: 13, color: "var(--color-accent-300)", whiteSpace: "nowrap" }}>
               Scorecard ›
             </Link>
           </div>

@@ -6,12 +6,13 @@ import { Legend, MarketLines, RangePicker, useHistory, type History, type Range 
 import { DEM_AXIS, LineChart, partyBands, REP_AXIS } from "./line-chart";
 import { compare, fmtDate, fmtDay, fmtMargin, officeLabel, raceName } from "@/lib/format";
 import { BigOdds } from "./odds";
+import { WinnerBanner } from "./winner";
 import { STATES } from "@/lib/races";
 
 type Avg = { margin: number; polls: number; pollsters: number } | null;
 type PollPt = { t: number; margin: number };
 export interface RaceDetailData {
-  race: { key: string; office: string; state: string | null; title: string; winnerParty: string | null };
+  race: { key: string; office: string; state: string | null; title: string; winnerParty: string | null; demPct: number | null; repPct: number | null };
   names: { D: string | null; R: string | null };
   current: { polymarket: number | null; kalshi: number | null };
   pollAverages: { all: Avg; D: Avg; R: Avg };
@@ -62,9 +63,17 @@ export function RaceDetail({ data, initial }: { data: RaceDetailData; initial: H
               {[names.D && `${names.D} (D)`, names.R && `${names.R} (R)`].filter(Boolean).join(" vs ")}
             </div>
           )}
-          {race.winnerParty && <div className="tag">Called · {race.winnerParty}</div>}
           {cmp && <div className={`tag${cmp.split ? " tag-split" : ""}`}>{cmp.split ? `Split call · ${cmp.gap} pt gap` : cmp.label}</div>}
         </div>
+        {race.winnerParty && (
+          <WinnerBanner
+            winner={race.winnerParty}
+            name={race.winnerParty === "D" || race.winnerParty === "R" ? names[race.winnerParty] : null}
+            control={race.office === "control"}
+            demPct={race.demPct}
+            repPct={race.repPct}
+          />
+        )}
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 16, padding: "18px 16px 28px", alignItems: "flex-start" }}>

@@ -37,6 +37,8 @@ async function RacesData({ searchParams }: { searchParams: Promise<Record<string
       k: r.markets.kalshi?.demWinProb ?? null,
       pollMargin: r.polls?.margin ?? null,
       winner: r.winnerParty,
+      demPct: r.demPct,
+      repPct: r.repPct,
     }));
   return <RaceList races={races} initialQuery={typeof q === "string" ? q : ""} />;
 }
