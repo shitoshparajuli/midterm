@@ -2,9 +2,10 @@ name: data pipeline
 
 on:
   schedule:
-    # Every 15 min. GitHub may delay scheduled runs by a few minutes; charts for 1h/1d
-    # ranges are served live from upstream, so this only affects stored history + race list.
-    - cron: "*/15 * * * *"
+    # Every 15 min, offset from :00/:15/:30/:45, when GitHub's scheduler is busiest and drops
+    # the most runs. Cron has no seconds field. Charts for 1h/1d ranges are served live from
+    # upstream, so late runs only affect stored history, current odds and the race list.
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
     inputs:
       steps:
