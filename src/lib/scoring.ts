@@ -30,7 +30,7 @@ export interface Score {
 }
 
 /** Sources shown as first-class rows; individual pollsters are `pollster:<name>`. */
-export const MAIN_SOURCES = ["polymarket", "kalshi", "polls:all", "polls:nonpartisan", "polls:D", "polls:R"] as const;
+export const MAIN_SOURCES = ["polymarket", "kalshi", "polls:all", "polls:nonpartisan", "polls:D", "polls:R", "times-siena"] as const;
 export const SOURCE_LABEL: Record<string, string> = {
   polymarket: "Polymarket",
   kalshi: "Kalshi",
@@ -38,8 +38,27 @@ export const SOURCE_LABEL: Record<string, string> = {
   "polls:nonpartisan": "Nonpartisan polls",
   "polls:D": "Left-leaning polls",
   "polls:R": "Right-leaning polls",
+  "times-siena": "Times/Siena",
 };
 export const sourceLabel = (s: string) => SOURCE_LABEL[s] ?? s.replace(/^pollster:/, "");
+
+/** VoteHub has listed it as both "…/Siena College" and "…/Siena University". */
+const TIMES_SIENA = /^pollster:the new york times\/siena\b/i;
+
+/**
+ * Adds a first-class `times-siena` source built from the lock's own `pollster:` rows (its latest
+ * poll per race), so it can be scored like the poll groups without changing a frozen lock.
+ */
+export function withTimesSiena<T extends { raceKey: string; source: string; detail: unknown }>(rows: T[]): T[] {
+  const ended = (f: T) => (f.detail as { endDate?: string } | null)?.endDate ?? "";
+  const latest = new Map<string, T>();
+  for (const f of rows) {
+    if (!TIMES_SIENA.test(f.source)) continue;
+    const cur = latest.get(f.raceKey);
+    if (!cur || ended(f) > ended(cur)) latest.set(f.raceKey, f);
+  }
+  return [...rows, ...[...latest.values()].map((f) => ({ ...f, source: "times-siena" }))];
+}
 
 const clamp = (p: number) => Math.min(Math.max(p, 0.001), 0.999);
 

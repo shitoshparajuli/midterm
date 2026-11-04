@@ -92,12 +92,15 @@ stored price history and only polls that ended by then, so a delayed run still l
 - `forecast_locks`: one row per lock (`2026-final`), with that moment's Races to watch (`watch`)
 - `forecasts`: one row per lock × race × source. Sources: `polymarket`, `kalshi`, `polls:all`,
   `polls:nonpartisan`, `polls:D`, `polls:R`, and `pollster:<name>` (each pollster's latest poll in the
-  race, within 60 days). Stores P(D), the poll margin, and the raw inputs (`detail`).
+  race, within 60 days). Stores P(D), the poll margin, and the raw inputs (`detail`). The scorecard also
+  scores Times/Siena as its own source (`times-siena`), built when reading a lock from its `pollster:` rows,
+  so existing locks never change.
 - `forecast_scores`: per lock × source × scope (`all`, `office:senate`, `state:TX`, `watch`, ...): races
   scored, winners called (an exact 50% counts as half), Brier, log loss, average chance given to the
   winner, and for polls the margin bias / mean absolute miss. Chamber control is scored on its own.
 
-`/scorecard` opens on the source leaderboard for the locked Races to watch, with each race's calls.
+`/scorecard` opens on the source leaderboard (markets, poll averages by lean, and Times/Siena) for the
+locked Races to watch, with each race's calls.
 `/scorecard?view=all` covers every race: the leaderboard by office, calibration, a pollster leaderboard
 (pollsters with 3+ scored races are ranked first) and a state-by-state ✓/✗ table. Under the Races to watch it
 also lists the 10 races where the locked market odds and the nonpartisan poll average disagreed most (ranked as on

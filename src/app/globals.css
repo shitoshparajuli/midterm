@@ -28,6 +28,7 @@
   --color-kalshi: oklch(0.8 0.12 78);
   --color-dem: oklch(0.72 0.1 245);
   --color-rep: oklch(0.72 0.11 25);
+  --color-siena: oklch(0.76 0.1 170);
 
   --radius-md: 8px;
   --shadow-sm: 0 0 0 1px #3f424d;

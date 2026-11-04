@@ -7,7 +7,7 @@ import { db, schema } from "@/lib/db";
 import { demProb, leanMap, priceAt, primaryMarkets, racesToWatch, PLATFORMS } from "@/lib/queries";
 import { inGroup, LEAN_GROUPS, pollAverage } from "@/lib/poll-average";
 import { marginToProb } from "@/lib/stats";
-import { calibration, MAIN_SOURCES, scoreAll, type ForecastRow } from "@/lib/scoring";
+import { calibration, MAIN_SOURCES, scoreAll, withTimesSiena, type ForecastRow } from "@/lib/scoring";
 import { FINAL_LOCK_AT, FINAL_LOCK_ID } from "@/lib/election";
 import { byDisagreement, compareRace } from "@/lib/vs-polls";
 
@@ -133,7 +133,7 @@ export async function loadForecasts(lockId: string) {
 /** Recompute and store scores for a lock against current results. */
 export async function storeScores(lockId: string) {
   const [forecasts, races, [lock]] = await Promise.all([
-    loadForecasts(lockId),
+    loadForecasts(lockId).then(withTimesSiena),
     db.select().from(schema.races),
     db.select({ watch: schema.forecastLocks.watch }).from(schema.forecastLocks).where(eq(schema.forecastLocks.id, lockId)),
   ]);
@@ -157,7 +157,7 @@ export async function scorecard(lockId: string = FINAL_LOCK_ID) {
   const [lock] = await db.select().from(schema.forecastLocks).where(eq(schema.forecastLocks.id, lockId));
   const now = new Date();
   const [forecasts, races, leanOf, watch] = await Promise.all([
-    lock ? loadForecasts(lockId) : buildForecasts(now),
+    lock ? loadForecasts(lockId).then(withTimesSiena) : buildForecasts(now).then(withTimesSiena),
     db.select().from(schema.races).where(sql`${schema.races.office} <> 'generic'`),
     leanMap(),
     lock ? (lock.watch ?? []) : racesToWatch(),
@@ -201,7 +201,8 @@ export async function scorecard(lockId: string = FINAL_LOCK_ID) {
       const all = pollAvg.get(`${r.key} polls:all`);
       if (r.office === "control" || !all || !both.length) return [];
       const markets = { polymarket: f.polymarket?.p ?? null, kalshi: f.kalshi?.p ?? null, avg: both.reduce((a, b) => a + b, 0) / both.length };
-      return [compareRace({ ...r, markets, polls: { all, nonpartisan: pollAvg.get(`${r.key} polls:nonpartisan`) ?? null } }, "nonpartisan")];
+      const polls = { all, nonpartisan: pollAvg.get(`${r.key} polls:nonpartisan`) ?? null };
+      return [compareRace({ ...r, markets, polls, siena: f["times-siena"] ?? null }, "nonpartisan")];
     })
     .filter((r) => !r.fallback)
     .sort(byDisagreement)

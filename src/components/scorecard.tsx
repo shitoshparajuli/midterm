@@ -28,8 +28,12 @@ const SOURCES = [
   { id: "polls:nonpartisan", color: "var(--color-neutral-500)" },
   { id: "polls:D", color: "var(--color-dem)" },
   { id: "polls:R", color: "var(--color-rep)" },
+  { id: "times-siena", color: "var(--color-siena)" },
 ] as const;
-const ROW_SOURCES = ["polymarket", "kalshi", "polls:all"] as const;
+const isPoll = (source: string) => source !== "polymarket" && source !== "kalshi";
+/** Per-race calls; Times/Siena only shows where it polled. */
+const ROW_SOURCES = ["polymarket", "kalshi", "polls:all", "times-siena"] as const;
+const ROW_LABEL = { polymarket: "P", kalshi: "K", "polls:all": "Polls", "times-siena": "Times/Siena" };
 
 const pct = (v: number | null | undefined, d = 0) => (v == null ? "—" : `${(v * 100).toFixed(d)}%`);
 const num = (v: number | null | undefined, d = 2) => (v == null ? "—" : v.toFixed(d));
@@ -115,14 +119,15 @@ export function ScorecardView({ data, view: initialView }: { data: Scorecard; vi
             <div className="kicker">Who called it best</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
               {SOURCES.map((s) => (
-                <SourceCard key={s.id} label={sourceLabel(s.id)} color={s.color} score={data.summary[s.id]?.[scope] ?? null} projected={projected(s.id)} poll={s.id.startsWith("polls:")} />
+                <SourceCard key={s.id} label={sourceLabel(s.id)} color={s.color} score={data.summary[s.id]?.[scope] ?? null} projected={projected(s.id)} poll={isPoll(s.id)} />
               ))}
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.5, color: "var(--color-neutral-500)", maxWidth: 760 }}>
               <b style={{ fontWeight: 500 }}>Called right</b>: the winner was above 50%. <b style={{ fontWeight: 500 }}>Avg on winner</b>: the chance it gave the
               eventual winner, on average (higher is better). <b style={{ fontWeight: 500 }}>Brier</b>: squared error of the probabilities, 0 is perfect and a
               coin flip scores 0.25. <b style={{ fontWeight: 500 }}>Poll error</b>: projected minus actual D−R margin; positive means the polls overstated
-              Democrats. Polls turn margins into win chances using typical polling error (±6.5 pts statewide, ±7.5 House).
+              Democrats. Polls turn margins into win chances using typical polling error (±6.5 pts statewide, ±7.5 House).{" "}
+              <TimesSienaNote />
             </div>
           </section>
 
@@ -164,9 +169,12 @@ function Watch({ data }: { data: Scorecard }) {
               color={s.color}
               score={data.summary[s.id]?.watch ?? null}
               projected={races.filter(({ r }) => r.f[s.id]?.p != null).length}
-              poll={s.id.startsWith("polls:")}
+              poll={isPoll(s.id)}
             />
           ))}
+        </div>
+        <div style={{ fontSize: 12, lineHeight: 1.5, color: "var(--color-neutral-500)", maxWidth: 760 }}>
+          <TimesSienaNote />
         </div>
       </section>
 
@@ -257,12 +265,30 @@ function VsLine({ r }: { r: VsRow }) {
           <Odds p={r.pollP} />
           <Mark v={mark(r.pollP)} />
         </span>
+        {r.siena && (
+          <span style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+            <span className="muted" style={{ fontSize: 11 }}>
+              Times/Siena
+            </span>
+            <span style={{ fontWeight: 500 }}>{fmtMargin(r.siena.margin)}</span>
+            <Mark v={r.siena.p == null ? null : mark(r.siena.p)} />
+          </span>
+        )}
         <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--color-neutral-500)" }}>
           {r.winner ? `${gap} · ` : ""}
           {r.poll.polls} poll{r.poll.polls === 1 ? "" : "s"}
         </span>
       </div>
     </Link>
+  );
+}
+
+function TimesSienaNote() {
+  return (
+    <>
+      <b style={{ fontWeight: 500 }}>Times/Siena</b>: the latest New York Times/Siena poll in each race it polled within 60 days of the lock, scored
+      like the poll averages.
+    </>
   );
 }
 
@@ -499,15 +525,16 @@ function RaceLine({ r, rank }: { r: Race; rank?: number }) {
       <div style={{ display: "flex", alignItems: "baseline", gap: 14, fontSize: 13, flexWrap: "wrap" }}>
         {ROW_SOURCES.map((s) => {
           const f = r.f[s];
+          if (s === "times-siena" && !f) return null;
           return (
             <span key={s} style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
               <span className="muted" style={{ fontSize: 11 }}>
-                {s === "polymarket" ? "P" : s === "kalshi" ? "K" : "Polls"}
+                {ROW_LABEL[s]}
               </span>
-              {s === "polls:all" ? (
-                <span style={{ fontWeight: 500 }}>{f ? fmtMargin(f.margin) : "—"}</span>
-              ) : (
+              {s === "polymarket" || s === "kalshi" ? (
                 <Odds p={f?.p} platform={s} />
+              ) : (
+                <span style={{ fontWeight: 500 }}>{f ? fmtMargin(f.margin) : "—"}</span>
               )}
               <Mark v={verdict(r, s)} />
             </span>

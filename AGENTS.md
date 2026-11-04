@@ -11,7 +11,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # Agent guide: The Spread (2026 midterm tracker)
 
 Tracks the 2026 US midterms (Senate, House, Governor, chamber control) and compares
-**Polymarket**, **Kalshi** and **polls** (split by left/right-leaning pollsters) against results,
+**Polymarket**, **Kalshi** and **polls** (split by left/right-leaning pollsters, plus Times/Siena on its own) against results,
 overall and on the featured "Races to watch".
 Live at https://midterm-three-mu.vercel.app. `README.md` covers architecture, methodology and the API
 in depth; this file is the short version plus the rules that are easy to break.
@@ -73,7 +73,7 @@ affected page in a browser at **390px and 1280px** wide.
   `D / (D + R)` from the highest-volume D and R contracts. The UI shows both parties, either
   `D 66% · R 34%` or the favorite compactly (`D66`, `R58`), via `src/components/odds.tsx`.
 - **Colors are fixed app-wide:** Polymarket `--color-accent` (purple), Kalshi `--color-kalshi` (amber),
-  Dem `--color-dem` (blue), Rep `--color-rep` (red). Tokens live in `src/app/globals.css` (Nocturne
+  Dem `--color-dem` (blue), Rep `--color-rep` (red), Times/Siena `--color-siena` (teal). Tokens live in `src/app/globals.css` (Nocturne
   design system); headings use weight 500, numbers use tabular figures.
 - **Polls are vote-share margins** (`D+2`) and are never drawn on the same axis as market win probability.
 - Match the surrounding code: small modules, comments only where the *why* isn't obvious.
