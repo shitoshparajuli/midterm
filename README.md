@@ -6,6 +6,10 @@ well **Polymarket** and **Kalshi** predicted them, compared with polls from **le
 
 Next.js on Vercel · Postgres (Neon) · data pipeline on GitHub Actions.
 
+**The 2026 cycle is archived.** The site now serves only the Scorecard, read from files in
+`data/archive/` with no database (see [Archive between cycles](#archive-between-cycles)). Everything below
+describes the live setup, which comes back by setting `ARCHIVED = false` for the next cycle.
+
 ## Architecture
 
 ```
@@ -109,10 +113,35 @@ today's numbers. `GET /api/scorecard?format=csv` downloads the locked projection
 (with each race's `watch_rank`).
 
 Poll *margin* scoring needs vote shares: add them to `data/results.csv` as results are certified and
-commit it. The next pipeline run picks them up and re-scores.
+commit it. The next pipeline run picks them up and re-scores. (Archived locks keep results in their own
+file instead; see below.)
 
 Test locks (any id other than `2026-final`): `LOCK_ID=test LOCK_AT=now LOCK_FORCE=1 pnpm pipeline lock scores`,
 then view `/scorecard?lock=test`.
+
+### Archive between cycles
+
+Once a cycle is over, the live pages and the pipeline aren't needed, and a free database can run out of
+quota (Neon's did on Nov 4, 2026). So the final lock is archived to files and the site is served from them:
+
+- `data/archive/<lock>.json`: the frozen projections, the lock's Races to watch, race names and pollster
+  leans. Written by `pnpm archive <lock>` from the database.
+- `data/archive/<lock>-results.csv`: `race_key,winner_party,dem_pct,rep_pct,called_at,source`. Refresh
+  winners from market settlement with `pnpm pipeline discover results && pnpm archive <lock> --results-only`
+  (works against the local PGlite database, which needs no quota). Rows with a `source` that doesn't start
+  with `market:` are hand edits and are kept, so add vote shares or calls there by hand. Push to redeploy.
+- `ARCHIVED` in `src/lib/election.ts` turns on archive mode: `/scorecard` and `/api/scorecard` read the
+  archive (`src/lib/archive.ts`, which feeds the same pure `buildScorecard()` as the database path), the
+  other pages redirect to `/scorecard`, and the header drops its tabs and search. The pipeline workflow
+  has no schedule.
+
+The 2026 archive was built from the production lock as downloaded right after 9pm ET (its CSV and
+`/api/scorecard`), with poll counts from a local 9pm rebuild that matched every poll average exactly.
+
+**Next cycle:** set `ARCHIVED = false`, update `ELECTION_DAY`, `NIGHT_START`/`NIGHT_END`,
+`FINAL_LOCK_ID` and `FINAL_LOCK_AT` in `src/lib/election.ts`, restore the cron schedule in
+`.github/workflows/pipeline.yml`, and point `DATABASE_URL` at a fresh database. Older archives stay
+viewable at `/scorecard?lock=<id>`.
 
 ### Accuracy (`/api/accuracy?checkpoint=30d|7d|1d|0d`)
 
@@ -136,7 +165,7 @@ Built from the Claude Design handoff in `design/design_handoff_midterm_tracker/`
 | `/races` | Searchable list of every race, with filters for office and split calls |
 | `/races/[key]` | Race detail: market chart (1H/1D/1W/30D/All/Nov 3) and a separate poll panel (all / left / right averages, poll dots, latest poll per pollster) |
 | `/vs-polls` | Markets vs polls: races where market odds and poll-implied odds favor different candidates or are far apart (nonpartisan or all polls) |
-| `/scorecard` | Locked Nov 2 projections vs results for the Races to watch; `?view=all` for every race: leaderboard, calibration, pollsters, state by state |
+| `/scorecard` | Locked Nov 2 projections vs results for the Races to watch; `?view=all` for every race: leaderboard, calibration, pollsters, state by state. The only page while `ARCHIVED`; the others redirect to it |
 | `/live` | Election night: seat counts, control chart with race-call markers, scorecard at poll close, race rows |
 
 Polymarket is always purple and Kalshi amber. "Nov 3" unlocks at 7pm ET on election night
@@ -180,8 +209,8 @@ Run individual steps with `pnpm pipeline prices polls`. After changing
    sets `DATABASE_URL`. Use the *pooled* connection string.
 2. **Vercel**: import this repo. No other env vars are needed.
 3. **Pipeline**: add the same `DATABASE_URL` as a GitHub repo secret (Settings → Secrets → Actions).
-   `.github/workflows/pipeline.yml` runs migrations plus the full pipeline every 15 min. Trigger it
-   manually once from the Actions tab to backfill.
+   `.github/workflows/pipeline.yml` runs migrations plus the full pipeline every 15 min during a cycle
+   (the schedule is commented out while archived). Trigger it manually once from the Actions tab to backfill.
 
 Vercel Cron isn't used because Hobby plans only allow daily jobs. GitHub Actions is free for public
 repos and has no function timeout.

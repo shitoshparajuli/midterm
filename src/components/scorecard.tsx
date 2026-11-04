@@ -9,7 +9,7 @@ import { Dumbbell } from "./vs-polls-row";
 import { fmtMargin, officeLabel, raceName } from "@/lib/format";
 import { STATES } from "@/lib/races";
 import { callCredit, sourceLabel, type Score } from "@/lib/scoring";
-import type { Scorecard } from "@/lib/forecasts";
+import type { Scorecard } from "@/lib/scorecard";
 
 export type View = "all" | "watch";
 type Office = "all" | "senate" | "governor" | "house" | "control";
@@ -50,6 +50,19 @@ const verdict = (r: Race, source: string): number | null => {
   if (p == null || !decided(r)) return null;
   return callCredit(p, r.winner === "D");
 };
+/** Race rows link to the race page, except in an archive, which has no race pages. */
+function RaceRow({ raceKey, archived, style, children }: { raceKey: string; archived: boolean; style: React.CSSProperties; children: React.ReactNode }) {
+  return archived ? (
+    <div className="row" style={style}>
+      {children}
+    </div>
+  ) : (
+    <Link href={`/races/${raceKey}`} className="row" style={style}>
+      {children}
+    </Link>
+  );
+}
+
 const Mark = ({ v }: { v: number | null }) =>
   v == null ? null : (
     <span style={{ color: v === 1 ? "var(--color-neutral-100)" : "var(--color-neutral-500)" }}>{v === 1 ? "✓" : v === 0 ? "✗" : "½"}</span>
@@ -182,7 +195,7 @@ function Watch({ data }: { data: Scorecard }) {
         <div className="kicker">The races</div>
         <div style={{ display: "flex", flexDirection: "column" }}>
           {races.map(({ r, w }) => (
-            <RaceLine key={r.key} r={r} rank={w.rank} />
+            <RaceLine key={r.key} r={r} rank={w.rank} archived={data.lock.archived} />
           ))}
           {!races.length && <div className="empty">No races to watch yet.</div>}
         </div>
@@ -207,9 +220,13 @@ function VsPolls({ data }: { data: Scorecard }) {
       <div style={{ fontSize: 13, color: "var(--color-neutral-400)", lineHeight: 1.45, maxWidth: 720 }}>
         The {rows.length} races where market odds and the nonpartisan poll average were furthest apart
         {data.lock.preview ? " right now" : " when projections locked"}, ranked as on{" "}
-        <Link href="/vs-polls" style={{ color: "var(--color-accent-300)" }}>
-          Markets vs polls
-        </Link>
+        {data.lock.archived ? (
+          "Markets vs polls"
+        ) : (
+          <Link href="/vs-polls" style={{ color: "var(--color-accent-300)" }}>
+            Markets vs polls
+          </Link>
+        )}
         .{" "}
         {done.length ? (
           <>
@@ -222,7 +239,7 @@ function VsPolls({ data }: { data: Scorecard }) {
       </div>
       <div style={{ display: "flex", flexDirection: "column" }}>
         {rows.map((r) => (
-          <VsLine key={r.key} r={r} />
+          <VsLine key={r.key} r={r} archived={data.lock.archived} />
         ))}
         {!rows.length && <div className="empty">No races with both market odds and nonpartisan polls.</div>}
       </div>
@@ -230,11 +247,11 @@ function VsPolls({ data }: { data: Scorecard }) {
   );
 }
 
-function VsLine({ r }: { r: VsRow }) {
+function VsLine({ r, archived }: { r: VsRow; archived: boolean }) {
   const mark = (p: number) => (decided(r) ? callCredit(p, r.winner === "D") : null);
   const gap = r.split ? "Different favorite" : `${Math.round(Math.abs(r.gap) * 100)} pt gap`;
   return (
-    <Link href={`/races/${r.key}`} className="row" style={{ padding: "10px 0" }}>
+    <RaceRow raceKey={r.key} archived={archived} style={{ padding: "10px 0" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, flex: 1, minWidth: 0 }}>
           <span className="row-name" style={{ fontSize: 14 }}>
@@ -279,7 +296,7 @@ function VsLine({ r }: { r: VsRow }) {
           {r.poll.polls} poll{r.poll.polls === 1 ? "" : "s"}
         </span>
       </div>
-    </Link>
+    </RaceRow>
   );
 }
 
@@ -488,7 +505,7 @@ function States({ data, office }: { data: Scorecard; office: Office }) {
                 </span>
               </summary>
               {g.races.map((r) => (
-                <RaceLine key={r.key} r={r} />
+                <RaceLine key={r.key} r={r} archived={data.lock.archived} />
               ))}
             </details>
           );
@@ -499,9 +516,9 @@ function States({ data, office }: { data: Scorecard; office: Office }) {
   );
 }
 
-function RaceLine({ r, rank }: { r: Race; rank?: number }) {
+function RaceLine({ r, rank, archived }: { r: Race; rank?: number; archived: boolean }) {
   return (
-    <Link href={`/races/${r.key}`} className="row" style={{ padding: rank ? "10px 0" : "10px 0 10px 12px" }}>
+    <RaceRow raceKey={r.key} archived={archived} style={{ padding: rank ? "10px 0" : "10px 0 10px 12px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, flex: 1, minWidth: 0 }}>
           {rank != null && (
@@ -541,6 +558,6 @@ function RaceLine({ r, rank }: { r: Race; rank?: number }) {
           );
         })}
       </div>
-    </Link>
+    </RaceRow>
   );
 }

@@ -32,4 +32,9 @@ export const nightStarted = (now = Date.now()) => now >= NIGHT_START;
 
 /** Final projections are frozen at 9pm ET on Nov 2 (EST, UTC−5) and scored against results. */
 export const FINAL_LOCK_ID = "2026-final";
+/**
+ * The cycle is over: the site serves only the Scorecard, from the lock archived in data/archive/
+ * (no database needed), and the live pages redirect to it. Set to false for a live cycle.
+ */
+export const ARCHIVED = true;
 export const FINAL_LOCK_AT = Date.parse("2026-11-03T02:00:00Z");

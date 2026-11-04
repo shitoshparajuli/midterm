@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { isNight, NIGHT_START, nightStarted } from "@/lib/election";
+import { ARCHIVED, isNight, NIGHT_START, nightStarted } from "@/lib/election";
 import { fmtTime } from "@/lib/format";
 import { GlobalSearch } from "./global-search";
 
@@ -14,6 +14,7 @@ const TABS = [
 ] as const;
 
 function meta(now: number | null) {
+  if (ARCHIVED) return "2026 midterms · final";
   if (now == null) return "Nov 3";
   if (isNight(now)) return `Nov 3 · ${fmtTime(now / 1000)} ET`;
   if (nightStarted(now)) return "Nov 3 · results";
@@ -46,15 +47,17 @@ export function Header({
         </Link>
         <div className="brand-meta">{meta(now)}</div>
       </div>
-      {search && <GlobalSearch />}
-      <nav className="seg seg-tabs" aria-label="Sections">
-        {TABS.map((t) => (
-          <Link key={t.id} href={t.href} className="seg-item" aria-current={t.id === active ? "page" : undefined}>
-            {t.id === "live" && <span className={`live-dot${live ? " pulse" : ""}`} />}
-            {t.label}
-          </Link>
-        ))}
-      </nav>
+      {search && !ARCHIVED && <GlobalSearch />}
+      {!ARCHIVED && (
+        <nav className="seg seg-tabs" aria-label="Sections">
+          {TABS.map((t) => (
+            <Link key={t.id} href={t.href} className="seg-item" aria-current={t.id === active ? "page" : undefined}>
+              {t.id === "live" && <span className={`live-dot${live ? " pulse" : ""}`} />}
+              {t.label}
+            </Link>
+          ))}
+        </nav>
+      )}
     </header>
   );
 }

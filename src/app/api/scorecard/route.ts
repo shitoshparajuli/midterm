@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { lockCsv, scorecard } from "@/lib/forecasts";
-import { FINAL_LOCK_ID } from "@/lib/election";
+import { archivedCsv, archivedScorecard } from "@/lib/archive";
+import { ARCHIVED, FINAL_LOCK_ID } from "@/lib/election";
 import { json } from "@/lib/api";
 
 /**
@@ -10,7 +11,9 @@ import { json } from "@/lib/api";
 export async function GET(req: NextRequest) {
   const lock = req.nextUrl.searchParams.get("lock") ?? FINAL_LOCK_ID;
   if (req.nextUrl.searchParams.get("format") === "csv") {
-    return new Response(await lockCsv(lock), {
+    const csv = (await archivedCsv(lock)) ?? (ARCHIVED ? null : await lockCsv(lock));
+    if (csv == null) return json({ error: `no archived lock "${lock}"` }, { status: 404 });
+    return new Response(csv, {
       headers: {
         "content-type": "text/csv; charset=utf-8",
         "content-disposition": `attachment; filename="${lock}.csv"`,
@@ -18,5 +21,6 @@ export async function GET(req: NextRequest) {
       },
     });
   }
-  return json(await scorecard(lock), { maxAge: 300 });
+  const data = (await archivedScorecard(lock)) ?? (ARCHIVED ? null : await scorecard(lock));
+  return data ? json(data, { maxAge: 300 }) : json({ error: `no archived lock "${lock}"` }, { status: 404 });
 }

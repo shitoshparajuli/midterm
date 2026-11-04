@@ -16,6 +16,11 @@ overall and on the featured "Races to watch".
 Live at https://midterm-three-mu.vercel.app. `README.md` covers architecture, methodology and the API
 in depth; this file is the short version plus the rules that are easy to break.
 
+**The 2026 cycle is archived** (`ARCHIVED = true` in `src/lib/election.ts`): the site serves only
+`/scorecard`, read from `data/archive/2026-final.json` and `data/archive/2026-final-results.csv` with no
+database; the other pages redirect to it and the pipeline has no schedule. The production Neon database
+hit its free quota on Nov 4, 2026. See "Archive between cycles" in `README.md`.
+
 ## Stack and where things run
 
 - **Next.js 16** (App Router, `cacheComponents: true`, `partialPrefetching: true`) on **Vercel**. Pushing to `main` deploys.
@@ -87,6 +92,9 @@ affected page in a browser at **390px and 1280px** wide.
 - Never write fake or test results to the production database. Use the local PGlite database.
 - Results come from market settlement plus `data/results.csv` (winner and vote shares). Editing
   that CSV and pushing is the supported way to add calls and vote shares; the next run re-scores.
+  For an archived lock, edit `data/archive/<lock>-results.csv` instead and push (rows whose `source`
+  doesn't start with `market:` survive `pnpm archive --results-only`).
+- Don't hand-edit the projections in `data/archive/<lock>.json`; they are the frozen lock.
 - Each lock stores its own Races to watch (`forecast_locks.watch`); the `watch` scorecard scope and the
   post-lock Overview read it from there. Don't recompute it for an existing lock.
 - Never commit secrets. `.env*` is gitignored (except `.env.example`).
