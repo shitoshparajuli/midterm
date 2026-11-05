@@ -6,11 +6,13 @@ import { ARCHIVED, isNight, NIGHT_START, nightStarted } from "@/lib/election";
 import { fmtTime } from "@/lib/format";
 import { GlobalSearch } from "./global-search";
 
+/** `archived`: still served between cycles, without the database. */
 const TABS = [
-  { id: "overview", label: "Overview", href: "/" },
-  { id: "races", label: "Races", href: "/races" },
-  { id: "live", label: "Live", href: "/live" },
-  { id: "scorecard", label: "Scorecard", href: "/scorecard" },
+  { id: "overview", label: "Overview", href: "/", archived: false },
+  { id: "races", label: "Races", href: "/races", archived: false },
+  { id: "live", label: "Live", href: "/live", archived: false },
+  { id: "scorecard", label: "Scorecard", href: "/scorecard", archived: true },
+  { id: "world-cup", label: "World Cup", href: "/world-cup", archived: true },
 ] as const;
 
 function meta(now: number | null) {
@@ -48,16 +50,14 @@ export function Header({
         <div className="brand-meta">{meta(now)}</div>
       </div>
       {search && !ARCHIVED && <GlobalSearch />}
-      {!ARCHIVED && (
-        <nav className="seg seg-tabs" aria-label="Sections">
-          {TABS.map((t) => (
-            <Link key={t.id} href={t.href} className="seg-item" aria-current={t.id === active ? "page" : undefined}>
-              {t.id === "live" && <span className={`live-dot${live ? " pulse" : ""}`} />}
-              {t.label}
-            </Link>
-          ))}
-        </nav>
-      )}
+      <nav className="seg seg-tabs" aria-label="Sections" style={ARCHIVED ? { maxWidth: 320 } : undefined}>
+        {TABS.filter((t) => t.archived || !ARCHIVED).map((t) => (
+          <Link key={t.id} href={t.href} className="seg-item" aria-current={t.id === active ? "page" : undefined}>
+            {t.id === "live" && <span className={`live-dot${live ? " pulse" : ""}`} />}
+            {t.label}
+          </Link>
+        ))}
+      </nav>
     </header>
   );
 }

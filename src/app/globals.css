@@ -557,3 +557,132 @@ a {
 .state-group summary:hover span:first-child {
   color: var(--color-accent-300);
 }
+
+/* ---------------------------------------------------------------- world cup */
+
+.wc-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "name gap"
+    "track track";
+  gap: 6px 12px;
+  padding: 10px 0;
+  background: var(--rule-soft);
+}
+.wc-head {
+  padding: 0 0 6px;
+  background: var(--rule);
+}
+@media (min-width: 720px) {
+  .wc-row {
+    grid-template-columns: 270px minmax(0, 1fr) 64px;
+    grid-template-areas: "name track gap";
+    align-items: center;
+    gap: 16px;
+  }
+}
+.wc-dot,
+.wc-ring {
+  position: absolute;
+  top: 6px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+}
+.wc-dot {
+  background: var(--color-neutral-100);
+  box-shadow: 0 0 0 2px var(--color-bg);
+}
+.wc-ring {
+  border: 2px solid var(--color-neutral-400);
+  background: var(--color-bg);
+}
+.wc-tip {
+  position: absolute;
+  z-index: 10;
+  width: 200px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow:
+    0 0 0 1px #595d6c,
+    0 6px 18px rgba(0, 0, 0, 0.55);
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+.wc-vrow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  padding: 12px 0;
+  background: var(--rule-soft);
+  font-size: 14px;
+}
+.wc-vrow > :first-child {
+  grid-column: 1 / -1;
+}
+.wc-vlabel {
+  display: block;
+  font-size: 11px;
+  color: var(--color-neutral-500);
+  margin-bottom: 2px;
+}
+.wc-vhead {
+  display: none;
+}
+@media (min-width: 900px) {
+  .wc-vrow {
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.5fr);
+    align-items: center;
+    gap: 16px;
+  }
+  .wc-vrow > :first-child {
+    grid-column: auto;
+  }
+  .wc-vlabel {
+    display: none;
+  }
+  .wc-vhead {
+    display: grid;
+    padding: 0 0 6px;
+    background: var(--rule);
+    font-size: 11px;
+    color: var(--color-neutral-500);
+  }
+}
+
+.wc-details summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-accent-300);
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+.wc-ctable {
+  max-width: 560px;
+  max-height: 420px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+.wc-ctable-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px 72px 64px;
+  gap: 8px;
+  padding: 6px 0;
+  background: var(--rule-soft);
+}
+.wc-ctable-row > :not(:first-child) {
+  text-align: right;
+}
+.wc-ctable-head {
+  position: sticky;
+  top: 0;
+  background: var(--color-bg);
+  font-size: 11px;
+  color: var(--color-neutral-500);
+}

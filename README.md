@@ -7,7 +7,8 @@ well **Polymarket** and **Kalshi** predicted them, compared with polls from **le
 Next.js on Vercel · Postgres (Neon) · data pipeline on GitHub Actions.
 
 **The 2026 cycle is archived.** The site now serves only the Scorecard, read from files in
-`data/archive/` with no database (see [Archive between cycles](#archive-between-cycles)). Everything below
+`data/archive/` with no database (see [Archive between cycles](#archive-between-cycles)), and the
+[World Cup analysis](#world-cup-analysis-world-cup). Everything below
 describes the live setup, which comes back by setting `ARCHIVED = false` for the next cycle.
 
 ## Architecture
@@ -132,8 +133,8 @@ quota (Neon's did on Nov 4, 2026). So the final lock is archived to files and th
   with `market:` are hand edits and are kept, so add vote shares or calls there by hand. Push to redeploy.
 - `ARCHIVED` in `src/lib/election.ts` turns on archive mode: `/scorecard` and `/api/scorecard` read the
   archive (`src/lib/archive.ts`, which feeds the same pure `buildScorecard()` as the database path), the
-  other pages redirect to `/scorecard`, and the header drops its tabs and search. The pipeline workflow
-  has no schedule.
+  other pages redirect to `/scorecard`, and the header keeps only the Scorecard and World Cup tabs and
+  drops search. The pipeline workflow has no schedule.
 
 The 2026 archive was built from the production lock as downloaded right after 9pm ET (its CSV and
 `/api/scorecard`), with poll counts from a local 9pm rebuild that matched every poll average exactly.
@@ -142,6 +143,21 @@ The 2026 archive was built from the production lock as downloaded right after 9p
 `FINAL_LOCK_ID` and `FINAL_LOCK_AT` in `src/lib/election.ts`, restore the cron schedule in
 `.github/workflows/pipeline.yml`, and point `DATABASE_URL` at a fresh database. Older archives stay
 viewable at `/scorecard?lock=<id>`.
+
+### World Cup analysis (`/world-cup`)
+
+Did hosting the 2026 World Cup (June 11 to July 19) move votes? For each of the 11 US host counties (the
+county with the stadium: Bergen for New York/New Jersey, Tarrant for Dallas, Norfolk for Boston, Santa
+Clara for the Bay Area), the page compares the swing from the 2024 presidential margin to the top 2026
+race (Senate, else governor, else the whole House vote in Washington and Missouri) with the same swing in
+the rest of its state. It sets that against the five US finalists FIFA passed over in 2022 and every
+county that cast 250,000+ votes in 2024, and explains the outliers with the 2020 → 2024 swing.
+Margins are two-party (D − R over D + R). Counties under 95% counted are shown faded and kept out of averages.
+
+`pnpm analysis:world-cup` (`scripts/world-cup.ts`) rebuilds `data/analysis/world-cup.json` in about ten
+seconds from the AP results in The New York Times' public results JSON (2024 and 2026), tonmcg's 2020
+county results, and stadium House districts found with the Census geocoder (hard-coded in the script).
+Re-run it while states are still counting and push; the page is static and reads only that file.
 
 ### Accuracy (`/api/accuracy?checkpoint=30d|7d|1d|0d`)
 
@@ -167,6 +183,7 @@ Built from the Claude Design handoff in `design/design_handoff_midterm_tracker/`
 | `/vs-polls` | Markets vs polls: races where market odds and poll-implied odds favor different candidates or are far apart (nonpartisan or all polls) |
 | `/scorecard` | Locked Nov 2 projections vs results for the Races to watch; `?view=all` for every race: leaderboard, calibration, pollsters, state by state. The only page while `ARCHIVED`; the others redirect to it |
 | `/live` | Election night: seat counts, control chart with race-call markers, scorecard at poll close, race rows |
+| `/world-cup` | Did the World Cup move votes? Host counties' 2024 → 2026 swing against their states, the passed-over bid cities and every big county; how each host area voted. Static, from `data/analysis/world-cup.json` |
 
 Polymarket is always purple and Kalshi amber. "Nov 3" unlocks at 7pm ET on election night
 (minute-level data from upstream). Poll-close times per state live in `src/lib/election.ts`.

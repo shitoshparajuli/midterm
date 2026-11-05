@@ -12,6 +12,7 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "pipeline": "tsx scripts/pipeline.ts",
     "archive": "tsx scripts/archive.ts",
+    "analysis:world-cup": "tsx scripts/world-cup.ts",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

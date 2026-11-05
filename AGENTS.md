@@ -17,7 +17,7 @@ Live at https://midterm-three-mu.vercel.app. `README.md` covers architecture, me
 in depth; this file is the short version plus the rules that are easy to break.
 
 **The 2026 cycle is archived** (`ARCHIVED = true` in `src/lib/election.ts`): the site serves only
-`/scorecard`, read from `data/archive/2026-final.json` and `data/archive/2026-final-results.csv` with no
+`/scorecard` and the static `/world-cup` analysis, `/scorecard` read from `data/archive/2026-final.json` and `data/archive/2026-final-results.csv` with no
 database; the other pages redirect to it and the pipeline has no schedule. The production Neon database
 hit its free quota on Nov 4, 2026. See "Archive between cycles" in `README.md`.
 
@@ -41,9 +41,10 @@ src/lib/scoring.ts    pure scoring (Brier, log loss, calls, calibration, poll ma
 src/lib/election.ts   election-night times, poll-close times, FINAL_LOCK_AT  (pure, client-safe)
 src/lib/watch.ts      "Races to watch" ranking: volume + Wikipedia attention + a little closeness (pure)
 src/lib/format.ts, search.ts, series.ts, poll-average.ts, stats.ts, vs-polls.ts   pure helpers
-src/app/              pages: / (Overview), /races, /races/[key], /vs-polls, /live, /scorecard; /api/*
+src/app/              pages: / (Overview), /races, /races/[key], /vs-polls, /live, /scorecard, /world-cup; /api/*
 src/components/       UI (client components)
-data/                 curated inputs: pollster-affiliations.json, candidate-parties.json, results.csv
+data/                 curated inputs: pollster-affiliations.json, candidate-parties.json, results.csv;
+                      archive/ (archived locks), analysis/world-cup.json (from `pnpm analysis:world-cup`)
 design/               Claude Design handoff (reference only, excluded from lint)
 drizzle/              generated SQL migrations (commit them)
 ```
